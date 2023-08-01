@@ -1,10 +1,10 @@
 import Flutter
 import UIKit
 
-public class FlutterWatchGarminConnectiqPlugin: NSObject, FlutterPlugin {
+public class FlutterWatchGarminConnectIqPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "flutter_watch_garmin_connectiq", binaryMessenger: registrar.messenger())
-    let instance = FlutterWatchGarminConnectiqPlugin()
+    let instance = FlutterWatchGarminConnectIqPlugin()
     registrar.addMethodCallDelegate(instance, channel: channel)
   }
 

@@ -17,7 +17,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
-  final _flutterWatchGarminConnectiqPlugin = FlutterWatchGarminConnectiq();
+  final _flutterWatchGarminConnectIqPlugin = FlutterWatchGarminConnectIq();
 
   @override
   void initState() {
@@ -32,7 +32,8 @@ class _MyAppState extends State<MyApp> {
     // We also handle the message potentially returning null.
     try {
       platformVersion =
-          await _flutterWatchGarminConnectiqPlugin.getPlatformVersion() ?? 'Unknown platform version';
+          await _flutterWatchGarminConnectIqPlugin.getPlatformVersion() ??
+              'Unknown platform version';
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }

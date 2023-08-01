@@ -4,26 +4,26 @@ import 'package:flutter_watch_garmin_connectiq/flutter_watch_garmin_connectiq_pl
 import 'package:flutter_watch_garmin_connectiq/flutter_watch_garmin_connectiq_method_channel.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-class MockFlutterWatchGarminConnectiqPlatform
+class MockFlutterWatchGarminConnectIqPlatform
     with MockPlatformInterfaceMixin
-    implements FlutterWatchGarminConnectiqPlatform {
+    implements FlutterWatchGarminConnectIqPlatform {
 
   @override
   Future<String?> getPlatformVersion() => Future.value('42');
 }
 
 void main() {
-  final FlutterWatchGarminConnectiqPlatform initialPlatform = FlutterWatchGarminConnectiqPlatform.instance;
+  final FlutterWatchGarminConnectIqPlatform initialPlatform = FlutterWatchGarminConnectIqPlatform.instance;
 
-  test('$MethodChannelFlutterWatchGarminConnectiq is the default instance', () {
-    expect(initialPlatform, isInstanceOf<MethodChannelFlutterWatchGarminConnectiq>());
+  test('$MethodChannelFlutterWatchGarminConnectIq is the default instance', () {
+    expect(initialPlatform, isInstanceOf<MethodChannelFlutterWatchGarminConnectIq>());
   });
 
   test('getPlatformVersion', () async {
-    FlutterWatchGarminConnectiq flutterWatchGarminConnectiqPlugin = FlutterWatchGarminConnectiq();
-    MockFlutterWatchGarminConnectiqPlatform fakePlatform = MockFlutterWatchGarminConnectiqPlatform();
-    FlutterWatchGarminConnectiqPlatform.instance = fakePlatform;
+    FlutterWatchGarminConnectIq flutterWatchGarminConnectIqPlugin = FlutterWatchGarminConnectIq();
+    MockFlutterWatchGarminConnectIqPlatform fakePlatform = MockFlutterWatchGarminConnectIqPlatform();
+    FlutterWatchGarminConnectIqPlatform.instance = fakePlatform;
 
-    expect(await flutterWatchGarminConnectiqPlugin.getPlatformVersion(), '42');
+    expect(await flutterWatchGarminConnectIqPlugin.getPlatformVersion(), '42');
   });
 }

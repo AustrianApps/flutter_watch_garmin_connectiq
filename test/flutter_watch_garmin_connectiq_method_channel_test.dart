@@ -5,7 +5,7 @@ import 'package:flutter_watch_garmin_connectiq/flutter_watch_garmin_connectiq_me
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  MethodChannelFlutterWatchGarminConnectiq platform = MethodChannelFlutterWatchGarminConnectiq();
+  MethodChannelFlutterWatchGarminConnectIq platform = MethodChannelFlutterWatchGarminConnectIq();
   const MethodChannel channel = MethodChannel('flutter_watch_garmin_connectiq');
 
   setUp(() {
