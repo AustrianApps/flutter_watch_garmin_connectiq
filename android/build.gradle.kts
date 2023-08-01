@@ -42,6 +42,7 @@ android {
 
     sourceSets["main"].java {
         srcDir("src/main/kotlin")
+        srcDir("src/main/java")
     }
     sourceSets["test"].java {
         srcDir("src/test/kotlin")
@@ -52,6 +53,7 @@ android {
     }
 
     dependencies {
+        implementation("com.garmin.connectiq:ciq-companion-app-sdk:2.0.2@aar")
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")
     }
