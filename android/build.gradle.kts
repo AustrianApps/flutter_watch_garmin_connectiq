@@ -28,7 +28,8 @@ plugins {
 }
 
 android {
-    compileSdkVersion(31)
+    namespace = "com.austrianapps.flutter_watch_garmin_connectiq"
+    compileSdk = 31
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -47,7 +48,7 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion(16)
+        minSdk = 16
     }
 
     dependencies {
