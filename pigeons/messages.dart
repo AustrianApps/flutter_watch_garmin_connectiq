@@ -5,7 +5,9 @@ import 'package:pigeon/pigeon.dart';
   dartOptions: DartOptions(),
   kotlinOut:
       'android/src/main/kotlin/com/austrianapps/flutter_watch_garmin_connectiq/Messages.g.kt',
-  kotlinOptions: KotlinOptions(),
+  kotlinOptions: KotlinOptions(
+    package: 'com.austrianapps.flutter_watch_garmin_connectiq',
+  ),
   // javaOut: 'android/app/src/main/java/io/flutter/plugins/Messages.java',
   // javaOptions: JavaOptions(),
   swiftOut: 'ios/Classes/Messages.g.swift',

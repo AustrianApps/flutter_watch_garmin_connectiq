@@ -19,6 +19,9 @@ class FlutterWatchGarminConnectIqPlugin: FlutterPlugin, MethodCallHandler {
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_watch_garmin_connectiq")
     channel.setMethodCallHandler(this)
+
+    val api = ConnectIqHostApiImpl()
+    ConnectIqHostApi.setUp(flutterPluginBinding.binaryMessenger, api)
   }
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
