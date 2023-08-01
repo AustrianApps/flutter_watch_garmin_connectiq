@@ -19,8 +19,33 @@ import 'package:pigeon/pigeon.dart';
   // copyrightHeader: 'pigeons/copyright.txt',
   dartPackageName: 'flutter_watch_garmin_connectiq',
 ))
+//
+class PigeonIqDevice {
+  PigeonIqDevice({
+    required this.deviceIdentifier,
+    required this.friendlyName,
+    required this.status,
+  });
+
+  int deviceIdentifier;
+  String friendlyName;
+  PigeonIqDeviceStatus status;
+}
+
+enum PigeonIqDeviceStatus {
+  notPaired,
+  notConnected,
+  connected,
+  unknown,
+}
+
 @HostApi()
 abstract class ConnectIqHostApi {
   @async
   bool initialize();
+
+  @async
+  List<PigeonIqDevice> getKnownDevices();
+  @async
+  List<PigeonIqDevice> getConnectedDevices();
 }

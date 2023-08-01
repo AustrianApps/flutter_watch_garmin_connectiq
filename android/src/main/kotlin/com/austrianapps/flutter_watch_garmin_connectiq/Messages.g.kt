@@ -43,14 +43,77 @@ class FlutterError (
   val details: Any? = null
 ) : Throwable()
 
+enum class PigeonIqDeviceStatus(val raw: Int) {
+  NOTPAIRED(0),
+  NOTCONNECTED(1),
+  CONNECTED(2),
+  UNKNOWN(3);
+
+  companion object {
+    fun ofRaw(raw: Int): PigeonIqDeviceStatus? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class PigeonIqDevice (
+  val deviceIdentifier: Long,
+  val friendlyName: String,
+  val status: PigeonIqDeviceStatus
+
+) {
+  companion object {
+    @Suppress("UNCHECKED_CAST")
+    fun fromList(list: List<Any?>): PigeonIqDevice {
+      val deviceIdentifier = list[0].let { if (it is Int) it.toLong() else it as Long }
+      val friendlyName = list[1] as String
+      val status = PigeonIqDeviceStatus.ofRaw(list[2] as Int)!!
+      return PigeonIqDevice(deviceIdentifier, friendlyName, status)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf<Any?>(
+      deviceIdentifier,
+      friendlyName,
+      status.raw,
+    )
+  }
+}
+
+@Suppress("UNCHECKED_CAST")
+private object ConnectIqHostApiCodec : StandardMessageCodec() {
+  override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
+    return when (type) {
+      128.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          PigeonIqDevice.fromList(it)
+        }
+      }
+      else -> super.readValueOfType(type, buffer)
+    }
+  }
+  override fun writeValue(stream: ByteArrayOutputStream, value: Any?)   {
+    when (value) {
+      is PigeonIqDevice -> {
+        stream.write(128)
+        writeValue(stream, value.toList())
+      }
+      else -> super.writeValue(stream, value)
+    }
+  }
+}
+
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface ConnectIqHostApi {
   fun initialize(callback: (Result<Boolean>) -> Unit)
+  fun getKnownDevices(callback: (Result<List<PigeonIqDevice>>) -> Unit)
+  fun getConnectedDevices(callback: (Result<List<PigeonIqDevice>>) -> Unit)
 
   companion object {
     /** The codec used by ConnectIqHostApi. */
     val codec: MessageCodec<Any?> by lazy {
-      StandardMessageCodec()
+      ConnectIqHostApiCodec
     }
     /** Sets up an instance of `ConnectIqHostApi` to handle messages through the `binaryMessenger`. */
     @Suppress("UNCHECKED_CAST")
@@ -60,6 +123,42 @@ interface ConnectIqHostApi {
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             api.initialize() { result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.getKnownDevices", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.getKnownDevices() { result: Result<List<PigeonIqDevice>> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.getConnectedDevices", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.getConnectedDevices() { result: Result<List<PigeonIqDevice>> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(wrapError(error))

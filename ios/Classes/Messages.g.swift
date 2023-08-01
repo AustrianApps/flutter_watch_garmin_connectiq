@@ -34,17 +34,89 @@ private func nilOrValue<T>(_ value: Any?) -> T? {
   return value as! T?
 }
 
+enum PigeonIqDeviceStatus: Int {
+  case notPaired = 0
+  case notConnected = 1
+  case connected = 2
+  case unknown = 3
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct PigeonIqDevice {
+  var deviceIdentifier: Int64
+  var friendlyName: String
+  var status: PigeonIqDeviceStatus
+
+  static func fromList(_ list: [Any?]) -> PigeonIqDevice? {
+    let deviceIdentifier = list[0] is Int64 ? list[0] as! Int64 : Int64(list[0] as! Int32)
+    let friendlyName = list[1] as! String
+    let status = PigeonIqDeviceStatus(rawValue: list[2] as! Int)!
+
+    return PigeonIqDevice(
+      deviceIdentifier: deviceIdentifier,
+      friendlyName: friendlyName,
+      status: status
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      deviceIdentifier,
+      friendlyName,
+      status.rawValue,
+    ]
+  }
+}
+
+private class ConnectIqHostApiCodecReader: FlutterStandardReader {
+  override func readValue(ofType type: UInt8) -> Any? {
+    switch type {
+      case 128:
+        return PigeonIqDevice.fromList(self.readValue() as! [Any?])
+      default:
+        return super.readValue(ofType: type)
+    }
+  }
+}
+
+private class ConnectIqHostApiCodecWriter: FlutterStandardWriter {
+  override func writeValue(_ value: Any) {
+    if let value = value as? PigeonIqDevice {
+      super.writeByte(128)
+      super.writeValue(value.toList())
+    } else {
+      super.writeValue(value)
+    }
+  }
+}
+
+private class ConnectIqHostApiCodecReaderWriter: FlutterStandardReaderWriter {
+  override func reader(with data: Data) -> FlutterStandardReader {
+    return ConnectIqHostApiCodecReader(data: data)
+  }
+
+  override func writer(with data: NSMutableData) -> FlutterStandardWriter {
+    return ConnectIqHostApiCodecWriter(data: data)
+  }
+}
+
+class ConnectIqHostApiCodec: FlutterStandardMessageCodec {
+  static let shared = ConnectIqHostApiCodec(readerWriter: ConnectIqHostApiCodecReaderWriter())
+}
+
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol ConnectIqHostApi {
   func initialize(completion: @escaping (Result<Bool, Error>) -> Void)
+  func getKnownDevices(completion: @escaping (Result<[PigeonIqDevice], Error>) -> Void)
+  func getConnectedDevices(completion: @escaping (Result<[PigeonIqDevice], Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
 class ConnectIqHostApiSetup {
   /// The codec used by ConnectIqHostApi.
+  static var codec: FlutterStandardMessageCodec { ConnectIqHostApiCodec.shared }
   /// Sets up an instance of `ConnectIqHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: ConnectIqHostApi?) {
-    let initializeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.initialize", binaryMessenger: binaryMessenger)
+    let initializeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.initialize", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       initializeChannel.setMessageHandler { _, reply in
         api.initialize() { result in
@@ -58,6 +130,36 @@ class ConnectIqHostApiSetup {
       }
     } else {
       initializeChannel.setMessageHandler(nil)
+    }
+    let getKnownDevicesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.getKnownDevices", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getKnownDevicesChannel.setMessageHandler { _, reply in
+        api.getKnownDevices() { result in
+          switch result {
+            case .success(let res):
+              reply(wrapResult(res))
+            case .failure(let error):
+              reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      getKnownDevicesChannel.setMessageHandler(nil)
+    }
+    let getConnectedDevicesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.getConnectedDevices", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getConnectedDevicesChannel.setMessageHandler { _, reply in
+        api.getConnectedDevices() { result in
+          switch result {
+            case .success(let res):
+              reply(wrapResult(res))
+            case .failure(let error):
+              reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      getConnectedDevicesChannel.setMessageHandler(nil)
     }
   }
 }
