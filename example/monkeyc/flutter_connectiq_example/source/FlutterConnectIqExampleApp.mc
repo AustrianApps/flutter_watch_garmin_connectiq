@@ -2,10 +2,13 @@ import Toybox.Application;
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-class flutter_connectiq_exampleApp extends Application.AppBase {
+class FlutterConnectIqExampleApp extends Application.AppBase {
+
+    public var comm as PhoneCommBloc;
 
     function initialize() {
         AppBase.initialize();
+        comm = new PhoneCommBloc();
     }
 
     // onStart() is called on application start up
@@ -23,6 +26,6 @@ class flutter_connectiq_exampleApp extends Application.AppBase {
 
 }
 
-function getApp() as flutter_connectiq_exampleApp {
-    return Application.getApp() as flutter_connectiq_exampleApp;
+function getApp() as FlutterConnectIqExampleApp {
+    return Application.getApp() as FlutterConnectIqExampleApp;
 }

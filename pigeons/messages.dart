@@ -39,13 +39,131 @@ enum PigeonIqDeviceStatus {
   unknown,
 }
 
+enum PigeonIqAppStatus {
+  unknown,
+  installed,
+  notInstalled,
+  notSupported,
+}
+
+class PigeonIqApp {
+  PigeonIqApp({
+    required this.applicationId,
+    required this.status,
+    required this.displayName,
+    required this.version,
+  });
+
+  final String applicationId;
+  final PigeonIqAppStatus status;
+  final String displayName;
+  final int version;
+}
+
+class PigeonIqOpenApplicationResult {
+  PigeonIqOpenApplicationResult({required this.status});
+
+  final PigeonIqOpenApplicationStatus status;
+}
+
+enum PigeonIqOpenApplicationStatus {
+  promptShownOnDevice,
+  promptNotShownOnDevice,
+  appIsNotInstalled,
+  appIsAlreadyRunning,
+  unknownFailure,
+}
+
+enum PigeonIqMessageStatus {
+  success,
+  failureUnknown,
+  failureInvalidFormat,
+  failureMessageTooLarge,
+  failureUnsupportedType,
+  failureDuringTransfer,
+  failureInvalidDevice,
+  failureDeviceNotConnected,
+}
+
+class PigeonIqMessageResult {
+  PigeonIqMessageResult({required this.status});
+
+  PigeonIqMessageStatus status;
+}
+
+class InitAndroidOptions {
+  const InitAndroidOptions({required this.connectType, this.adbPort});
+
+  final ConnectType connectType;
+  final int? adbPort;
+}
+
+class InitIosOptions {
+  const InitIosOptions({this.urlScheme = ''});
+
+  final String urlScheme;
+}
+
+class InitOptions {
+  InitOptions({
+    required this.applicationIds,
+    this.iosOptions = const InitIosOptions(),
+    this.androidOptions =
+        const InitAndroidOptions(connectType: ConnectType.wireless),
+  });
+
+  List<String?> applicationIds;
+  InitIosOptions iosOptions;
+  InitAndroidOptions androidOptions;
+}
+
+enum ConnectType {
+  wireless,
+  adb,
+}
+
 @HostApi()
 abstract class ConnectIqHostApi {
   @async
-  bool initialize();
+  bool initialize(InitOptions initOptions);
 
   @async
   List<PigeonIqDevice> getKnownDevices();
+
   @async
   List<PigeonIqDevice> getConnectedDevices();
+
+  @async
+  PigeonIqApp getApplicationInfo(
+    int deviceId,
+    String applicationId,
+  );
+
+  @async
+  PigeonIqOpenApplicationResult openApplication(
+    int deviceId,
+    String applicationId,
+  );
+
+  @async
+  bool openStore(String storeId);
+
+  @async
+  PigeonIqMessageResult sendMessage(
+    int deviceId,
+    String applicationId,
+    Map<String, Object> message,
+  );
+}
+
+@FlutterApi()
+abstract class FlutterConnectIqApi {
+  void onDeviceStatusChanged(
+    PigeonIqDevice device,
+  );
+  void onMessageReceived(
+    PigeonIqDevice device,
+    PigeonIqApp app,
+    Object message,
+  );
 }

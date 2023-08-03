@@ -1,7 +1,6 @@
 package com.austrianapps.flutter_watch_garmin_connectiq
 
 import androidx.annotation.NonNull
-import com.shootformance.app.logd
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -18,6 +17,7 @@ class FlutterWatchGarminConnectIqPlugin: FlutterPlugin, MethodCallHandler, Activ
   /// when the Flutter Engine is detached from the Activity
   private lateinit var channel : MethodChannel
   private lateinit var flutterPluginBinding: FlutterPlugin.FlutterPluginBinding
+  private lateinit var flutterConnectIqApi: FlutterConnectIqApi
 
   private var api: ConnectIqHostApi? = null
 
@@ -30,6 +30,7 @@ class FlutterWatchGarminConnectIqPlugin: FlutterPlugin, MethodCallHandler, Activ
     this.flutterPluginBinding = flutterPluginBinding
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_watch_garmin_connectiq")
     channel.setMethodCallHandler(this)
+    flutterConnectIqApi = FlutterConnectIqApi(flutterPluginBinding.binaryMessenger)
 
   }
 
@@ -49,7 +50,10 @@ class FlutterWatchGarminConnectIqPlugin: FlutterPlugin, MethodCallHandler, Activ
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     logd { "onAttachedToActivity" }
     if (api == null) {
-      api = ConnectIqHostApiImpl(binding = binding).also {
+      api = ConnectIqHostApiImpl(
+        binding = binding,
+        flutterConnectIqApi = flutterConnectIqApi,
+        ).also {
         ConnectIqHostApi.setUp(flutterPluginBinding.binaryMessenger, it)
       }
     }

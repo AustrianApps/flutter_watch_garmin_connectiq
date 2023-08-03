@@ -27,6 +27,7 @@ dependencies:
 
   logging: ^1.2.0
   logging_appenders: ^1.1.0
+  flutter_hooks: ^0.20.0
 
 dev_dependencies:
   integration_test:

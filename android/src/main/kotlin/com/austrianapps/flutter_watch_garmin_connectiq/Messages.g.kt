@@ -56,6 +56,61 @@ enum class PigeonIqDeviceStatus(val raw: Int) {
   }
 }
 
+enum class PigeonIqAppStatus(val raw: Int) {
+  UNKNOWN(0),
+  INSTALLED(1),
+  NOTINSTALLED(2),
+  NOTSUPPORTED(3);
+
+  companion object {
+    fun ofRaw(raw: Int): PigeonIqAppStatus? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+enum class PigeonIqOpenApplicationStatus(val raw: Int) {
+  PROMPTSHOWNONDEVICE(0),
+  PROMPTNOTSHOWNONDEVICE(1),
+  APPISNOTINSTALLED(2),
+  APPISALREADYRUNNING(3),
+  UNKNOWNFAILURE(4);
+
+  companion object {
+    fun ofRaw(raw: Int): PigeonIqOpenApplicationStatus? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+enum class PigeonIqMessageStatus(val raw: Int) {
+  SUCCESS(0),
+  FAILUREUNKNOWN(1),
+  FAILUREINVALIDFORMAT(2),
+  FAILUREMESSAGETOOLARGE(3),
+  FAILUREUNSUPPORTEDTYPE(4),
+  FAILUREDURINGTRANSFER(5),
+  FAILUREINVALIDDEVICE(6),
+  FAILUREDEVICENOTCONNECTED(7);
+
+  companion object {
+    fun ofRaw(raw: Int): PigeonIqMessageStatus? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+enum class ConnectType(val raw: Int) {
+  WIRELESS(0),
+  ADB(1);
+
+  companion object {
+    fun ofRaw(raw: Int): ConnectType? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
 /** Generated class from Pigeon that represents data sent in messages. */
 data class PigeonIqDevice (
   val deviceIdentifier: Long,
@@ -81,13 +136,175 @@ data class PigeonIqDevice (
   }
 }
 
+/** Generated class from Pigeon that represents data sent in messages. */
+data class PigeonIqApp (
+  val applicationId: String,
+  val status: PigeonIqAppStatus,
+  val displayName: String,
+  val version: Long
+
+) {
+  companion object {
+    @Suppress("UNCHECKED_CAST")
+    fun fromList(list: List<Any?>): PigeonIqApp {
+      val applicationId = list[0] as String
+      val status = PigeonIqAppStatus.ofRaw(list[1] as Int)!!
+      val displayName = list[2] as String
+      val version = list[3].let { if (it is Int) it.toLong() else it as Long }
+      return PigeonIqApp(applicationId, status, displayName, version)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf<Any?>(
+      applicationId,
+      status.raw,
+      displayName,
+      version,
+    )
+  }
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class PigeonIqOpenApplicationResult (
+  val status: PigeonIqOpenApplicationStatus
+
+) {
+  companion object {
+    @Suppress("UNCHECKED_CAST")
+    fun fromList(list: List<Any?>): PigeonIqOpenApplicationResult {
+      val status = PigeonIqOpenApplicationStatus.ofRaw(list[0] as Int)!!
+      return PigeonIqOpenApplicationResult(status)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf<Any?>(
+      status.raw,
+    )
+  }
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class PigeonIqMessageResult (
+  val status: PigeonIqMessageStatus
+
+) {
+  companion object {
+    @Suppress("UNCHECKED_CAST")
+    fun fromList(list: List<Any?>): PigeonIqMessageResult {
+      val status = PigeonIqMessageStatus.ofRaw(list[0] as Int)!!
+      return PigeonIqMessageResult(status)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf<Any?>(
+      status.raw,
+    )
+  }
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class InitAndroidOptions (
+  val connectType: ConnectType,
+  val adbPort: Long? = null
+
+) {
+  companion object {
+    @Suppress("UNCHECKED_CAST")
+    fun fromList(list: List<Any?>): InitAndroidOptions {
+      val connectType = ConnectType.ofRaw(list[0] as Int)!!
+      val adbPort = list[1].let { if (it is Int) it.toLong() else it as Long? }
+      return InitAndroidOptions(connectType, adbPort)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf<Any?>(
+      connectType.raw,
+      adbPort,
+    )
+  }
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class InitIosOptions (
+  val urlScheme: String
+
+) {
+  companion object {
+    @Suppress("UNCHECKED_CAST")
+    fun fromList(list: List<Any?>): InitIosOptions {
+      val urlScheme = list[0] as String
+      return InitIosOptions(urlScheme)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf<Any?>(
+      urlScheme,
+    )
+  }
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class InitOptions (
+  val applicationIds: List<String?>,
+  val iosOptions: InitIosOptions,
+  val androidOptions: InitAndroidOptions
+
+) {
+  companion object {
+    @Suppress("UNCHECKED_CAST")
+    fun fromList(list: List<Any?>): InitOptions {
+      val applicationIds = list[0] as List<String?>
+      val iosOptions = InitIosOptions.fromList(list[1] as List<Any?>)
+      val androidOptions = InitAndroidOptions.fromList(list[2] as List<Any?>)
+      return InitOptions(applicationIds, iosOptions, androidOptions)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf<Any?>(
+      applicationIds,
+      iosOptions.toList(),
+      androidOptions.toList(),
+    )
+  }
+}
+
 @Suppress("UNCHECKED_CAST")
 private object ConnectIqHostApiCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
       128.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
+          InitAndroidOptions.fromList(it)
+        }
+      }
+      129.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          InitIosOptions.fromList(it)
+        }
+      }
+      130.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          InitOptions.fromList(it)
+        }
+      }
+      131.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          PigeonIqApp.fromList(it)
+        }
+      }
+      132.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
           PigeonIqDevice.fromList(it)
+        }
+      }
+      133.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          PigeonIqMessageResult.fromList(it)
+        }
+      }
+      134.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          PigeonIqOpenApplicationResult.fromList(it)
         }
       }
       else -> super.readValueOfType(type, buffer)
@@ -95,8 +312,32 @@ private object ConnectIqHostApiCodec : StandardMessageCodec() {
   }
   override fun writeValue(stream: ByteArrayOutputStream, value: Any?)   {
     when (value) {
-      is PigeonIqDevice -> {
+      is InitAndroidOptions -> {
         stream.write(128)
+        writeValue(stream, value.toList())
+      }
+      is InitIosOptions -> {
+        stream.write(129)
+        writeValue(stream, value.toList())
+      }
+      is InitOptions -> {
+        stream.write(130)
+        writeValue(stream, value.toList())
+      }
+      is PigeonIqApp -> {
+        stream.write(131)
+        writeValue(stream, value.toList())
+      }
+      is PigeonIqDevice -> {
+        stream.write(132)
+        writeValue(stream, value.toList())
+      }
+      is PigeonIqMessageResult -> {
+        stream.write(133)
+        writeValue(stream, value.toList())
+      }
+      is PigeonIqOpenApplicationResult -> {
+        stream.write(134)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -106,9 +347,13 @@ private object ConnectIqHostApiCodec : StandardMessageCodec() {
 
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface ConnectIqHostApi {
-  fun initialize(callback: (Result<Boolean>) -> Unit)
+  fun initialize(initOptions: InitOptions, callback: (Result<Boolean>) -> Unit)
   fun getKnownDevices(callback: (Result<List<PigeonIqDevice>>) -> Unit)
   fun getConnectedDevices(callback: (Result<List<PigeonIqDevice>>) -> Unit)
+  fun getApplicationInfo(deviceId: Long, applicationId: String, callback: (Result<PigeonIqApp>) -> Unit)
+  fun openApplication(deviceId: Long, applicationId: String, callback: (Result<PigeonIqOpenApplicationResult>) -> Unit)
+  fun openStore(storeId: String, callback: (Result<Boolean>) -> Unit)
+  fun sendMessage(deviceId: Long, applicationId: String, message: Map<String, Any>, callback: (Result<PigeonIqMessageResult>) -> Unit)
 
   companion object {
     /** The codec used by ConnectIqHostApi. */
@@ -121,8 +366,10 @@ interface ConnectIqHostApi {
       run {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.initialize", codec)
         if (api != null) {
-          channel.setMessageHandler { _, reply ->
-            api.initialize() { result: Result<Boolean> ->
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val initOptionsArg = args[0] as InitOptions
+            api.initialize(initOptionsArg) { result: Result<Boolean> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(wrapError(error))
@@ -172,6 +419,189 @@ interface ConnectIqHostApi {
           channel.setMessageHandler(null)
         }
       }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.getApplicationInfo", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val deviceIdArg = args[0].let { if (it is Int) it.toLong() else it as Long }
+            val applicationIdArg = args[1] as String
+            api.getApplicationInfo(deviceIdArg, applicationIdArg) { result: Result<PigeonIqApp> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.openApplication", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val deviceIdArg = args[0].let { if (it is Int) it.toLong() else it as Long }
+            val applicationIdArg = args[1] as String
+            api.openApplication(deviceIdArg, applicationIdArg) { result: Result<PigeonIqOpenApplicationResult> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.openStore", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val storeIdArg = args[0] as String
+            api.openStore(storeIdArg) { result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.sendMessage", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val deviceIdArg = args[0].let { if (it is Int) it.toLong() else it as Long }
+            val applicationIdArg = args[1] as String
+            val messageArg = args[2] as Map<String, Any>
+            api.sendMessage(deviceIdArg, applicationIdArg, messageArg) { result: Result<PigeonIqMessageResult> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+    }
+  }
+}
+@Suppress("UNCHECKED_CAST")
+private object FlutterConnectIqApiCodec : StandardMessageCodec() {
+  override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
+    return when (type) {
+      128.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          InitAndroidOptions.fromList(it)
+        }
+      }
+      129.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          InitIosOptions.fromList(it)
+        }
+      }
+      130.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          InitOptions.fromList(it)
+        }
+      }
+      131.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          PigeonIqApp.fromList(it)
+        }
+      }
+      132.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          PigeonIqDevice.fromList(it)
+        }
+      }
+      133.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          PigeonIqMessageResult.fromList(it)
+        }
+      }
+      134.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          PigeonIqOpenApplicationResult.fromList(it)
+        }
+      }
+      else -> super.readValueOfType(type, buffer)
+    }
+  }
+  override fun writeValue(stream: ByteArrayOutputStream, value: Any?)   {
+    when (value) {
+      is InitAndroidOptions -> {
+        stream.write(128)
+        writeValue(stream, value.toList())
+      }
+      is InitIosOptions -> {
+        stream.write(129)
+        writeValue(stream, value.toList())
+      }
+      is InitOptions -> {
+        stream.write(130)
+        writeValue(stream, value.toList())
+      }
+      is PigeonIqApp -> {
+        stream.write(131)
+        writeValue(stream, value.toList())
+      }
+      is PigeonIqDevice -> {
+        stream.write(132)
+        writeValue(stream, value.toList())
+      }
+      is PigeonIqMessageResult -> {
+        stream.write(133)
+        writeValue(stream, value.toList())
+      }
+      is PigeonIqOpenApplicationResult -> {
+        stream.write(134)
+        writeValue(stream, value.toList())
+      }
+      else -> super.writeValue(stream, value)
+    }
+  }
+}
+
+/** Generated class from Pigeon that represents Flutter messages that can be called from Kotlin. */
+@Suppress("UNCHECKED_CAST")
+class FlutterConnectIqApi(private val binaryMessenger: BinaryMessenger) {
+  companion object {
+    /** The codec used by FlutterConnectIqApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      FlutterConnectIqApiCodec
+    }
+  }
+  fun onDeviceStatusChanged(deviceArg: PigeonIqDevice, callback: () -> Unit) {
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.flutter_watch_garmin_connectiq.FlutterConnectIqApi.onDeviceStatusChanged", codec)
+    channel.send(listOf(deviceArg)) {
+      callback()
+    }
+  }
+  fun onMessageReceived(deviceArg: PigeonIqDevice, appArg: PigeonIqApp, messageArg: Any, callback: () -> Unit) {
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.flutter_watch_garmin_connectiq.FlutterConnectIqApi.onMessageReceived", codec)
+    channel.send(listOf(deviceArg, appArg, messageArg)) {
+      callback()
     }
   }
 }
