@@ -2,21 +2,22 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_watch_garmin_connectiq/src/gen/messages.g.dart';
-
 import 'package:logging/logging.dart';
-import 'package:uuid/uuid.dart';
 
 final _logger = Logger('connectiq');
 
-class FlutterWatchGarminConnectIq implements FlutterConnectIqApi {
+class FlutterWatchGarminConnectIq {
   final ConnectIqHostApi hostApi;
   final ValueNotifier<List<PigeonIqDevice>> _knownDevices = ValueNotifier([]);
   final ValueNotifier<Map<String, PigeonIqApp?>> _applications;
+  late final _messageReceivedController =
+      StreamController<ConnectIqMessage>.broadcast();
+  late final messageReceived = _messageReceivedController.stream;
 
   FlutterWatchGarminConnectIq._(this.hostApi, List<String> applicationIds)
       : _applications =
             ValueNotifier({for (final e in applicationIds) e: null}) {
-    FlutterConnectIqApi.setup(this);
+    FlutterConnectIqApi.setup(_FlutterConnectIqApiImpl(this));
     (() async {
       _knownDevices.value = List.unmodifiable(
           (await hostApi.getKnownDevices()).map((e) => e as PigeonIqDevice));
@@ -37,25 +38,6 @@ class FlutterWatchGarminConnectIq implements FlutterConnectIqApi {
   Future<ValueListenable<List<PigeonIqDevice>>> getKnownDevices() async =>
       _knownDevices;
 
-  @override
-  void onDeviceStatusChanged(PigeonIqDevice device) {
-    _logger.finer(
-        'onDeviceStatusChanged(${device.friendlyName}, ${device.status})');
-    final devices = _knownDevices;
-    if (devices != null) {
-      final v = devices.value;
-      devices.value = List.unmodifiable(v.map(
-          (e) => e.deviceIdentifier == device.deviceIdentifier ? device : e));
-    }
-  }
-
-  @override
-  void onMessageReceived(
-      PigeonIqDevice device, PigeonIqApp app, Object message) {
-    _logger.finer(
-        'onMessageReceived(${device.friendlyName}, ${app.displayName}, $message');
-  }
-
   Future<PigeonIqMessageResult> sendMessage(
       int deviceId, String applicationId, Map<String, Object> message) async {
     return await hostApi.sendMessage(deviceId, applicationId, message);
@@ -73,3 +55,42 @@ class FlutterWatchGarminConnectIq implements FlutterConnectIqApi {
 //         status: status,
 //       );
 // }
+
+class _FlutterConnectIqApiImpl implements FlutterConnectIqApi {
+  final FlutterWatchGarminConnectIq _connectIq;
+
+  _FlutterConnectIqApiImpl(this._connectIq);
+
+  @override
+  void onDeviceStatusChanged(PigeonIqDevice device) {
+    _logger.finer(
+        'onDeviceStatusChanged(${device.friendlyName}, ${device.status})');
+    final devices = _connectIq._knownDevices;
+    final v = devices.value;
+    devices.value = List.unmodifiable(v.map(
+        (e) => e.deviceIdentifier == device.deviceIdentifier ? device : e));
+  }
+
+  @override
+  void onMessageReceived(
+      PigeonIqDevice device, PigeonIqApp app, Object message) {
+    _logger.finer(
+        'onMessageReceived(${device.friendlyName}, ${app.displayName}, $message');
+    _connectIq._messageReceivedController.add(ConnectIqMessage._(
+      device: device,
+      app: app,
+      data: message,
+    ));
+  }
+}
+
+class ConnectIqMessage {
+  ConnectIqMessage._({
+    required this.device,
+    required this.app,
+    required this.data,
+  });
+  final PigeonIqDevice device;
+  final PigeonIqApp app;
+  final Object data;
+}
