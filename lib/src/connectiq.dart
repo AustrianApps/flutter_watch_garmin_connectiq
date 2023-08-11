@@ -35,8 +35,7 @@ class FlutterWatchGarminConnectIq {
         hostApi, initOptions.applicationIds.map((e) => e!).toList());
   }
 
-  Future<ValueListenable<List<PigeonIqDevice>>> getKnownDevices() async =>
-      _knownDevices;
+  ValueListenable<List<PigeonIqDevice>> getKnownDevices() => _knownDevices;
 
   Future<PigeonIqMessageResult> sendMessage(
       int deviceId, String applicationId, Map<String, Object> message) async {

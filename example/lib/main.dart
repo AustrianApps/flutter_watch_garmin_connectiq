@@ -51,9 +51,8 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         _initialized = true;
       });
-      final d = await _connectIq.getKnownDevices();
       setState(() {
-        devices = d;
+        devices = _connectIq.getKnownDevices();
       });
     } catch (e) {
       _logger.severe('Error initializing connectIq', e);
