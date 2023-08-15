@@ -199,7 +199,14 @@ class ConnectIqHostApiImpl(
         callback: (Result<T>) -> Unit,
         body: (device: IQDevice, app: IQApp) -> Unit
     ) {
+
         val app = appCache[AppCacheKey(deviceId, MyUui(applicationId))]
+            ?: if (initOptions.androidOptions.connectType == ConnectType.ADB) {
+                // for adb there can only be one app.. and it has no correct id.. so just use it..
+                appCache.values.first()
+            } else {
+                null
+            }
         if (app == null) {
             callback(Result.failure(FlutterError("unknownApp")))
             return
