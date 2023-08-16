@@ -1,5 +1,8 @@
 package com.austrianapps.flutter_watch_garmin_connectiq
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import com.garmin.android.connectiq.ConnectIQ
 import com.garmin.android.connectiq.ConnectIQ.IQApplicationInfoListener
 import com.garmin.android.connectiq.IQApp
@@ -37,7 +40,7 @@ class MyUui(uuid: String) {
 }
 
 class ConnectIqHostApiImpl(
-    val binding: ActivityPluginBinding,
+    var binding: ActivityPluginBinding,
     val flutterConnectIqApi: FlutterConnectIqApi,
 ) : ConnectIqHostApi, ConnectIQ.IQApplicationEventListener, ConnectIQ.IQDeviceEventListener {
 
@@ -51,7 +54,7 @@ class ConnectIqHostApiImpl(
 
     private val scopeIo = CoroutineScope(Dispatchers.IO)
 
-    override fun initialize(initOptions: InitOptions, callback: (Result<Boolean>) -> Unit) {
+    override fun initialize(initOptions: InitOptions, callback: (Result<InitResult>) -> Unit) {
         this.initOptions = initOptions
         connectIQ = ConnectIQ.getInstance(
             binding.activity.applicationContext,
@@ -67,19 +70,24 @@ class ConnectIqHostApiImpl(
         }
         connectIQ.initialize(
             binding.activity.applicationContext,
-            true,
+            false,
             object : ConnectIQ.ConnectIQListener {
                 override fun onSdkReady() {
                     logd { "onSdkReady: Successfully initialized ConnectIQ sdk" }
                     sdkReady = true
-                    callback(Result.success(true))
+                    callback(Result.success(InitResult(InitStatus.SUCCESS)))
                     registerForAllDeviceEvents()
                 }
 
-                override fun onInitializeError(status: ConnectIQ.IQSdkErrorStatus?) {
+                override fun onInitializeError(status: ConnectIQ.IQSdkErrorStatus) {
                     logw { "initialize error for ConnectIQ sdk: $status" }
                     sdkReady = false
-                    callback(Result.failure(FlutterError("initError", "$status")))
+                    val status = when (status) {
+                        ConnectIQ.IQSdkErrorStatus.GCM_NOT_INSTALLED -> InitStatus.ERRORGCMNOTINSTALLED
+                        ConnectIQ.IQSdkErrorStatus.GCM_UPGRADE_NEEDED -> InitStatus.ERRORGCMUPGRADENEEDED
+                        ConnectIQ.IQSdkErrorStatus.SERVICE_ERROR -> InitStatus.ERRORSERVICEERROR
+                    }
+                    callback(Result.success(InitResult(status)))
                 }
 
                 override fun onSdkShutDown() {
@@ -280,6 +288,26 @@ class ConnectIqHostApiImpl(
                 }
             }
         }
+    }
+
+    override fun openStoreForGcm(callback: (Result<Unit>) -> Unit) {
+        try {
+            binding.activity.startActivity(
+                Intent(
+                    "android.intent.action.VIEW",
+                    Uri.parse("market://details?id=com.garmin.android.apps.connectmobile")
+                )
+            )
+        } catch (var4: ActivityNotFoundException) {
+            binding.activity.startActivity(
+                Intent(
+                    "android.intent.action.VIEW",
+                    Uri.parse("https://play.google.com/store/apps/details?id=com.garmin.android.apps.connectmobile")
+                )
+            )
+        }
+        callback(Result.success(Unit))
+
     }
 
     private suspend fun registerForAppEvents(device: IQDevice, app: IQApp) {

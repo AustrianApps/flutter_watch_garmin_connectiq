@@ -26,6 +26,7 @@ const _applicationId = 'd7671b9b-1041-4c2c-925d-bab5e50302c3';
 
 class _MyAppState extends State<MyApp> {
   late final FlutterWatchGarminConnectIq _connectIq;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey();
   bool _initialized = false;
   ValueListenable<List<PigeonIqDevice>> devices =
       ValueNotifier(<PigeonIqDevice>[]);
@@ -41,12 +42,41 @@ class _MyAppState extends State<MyApp> {
     try {
       _logger.fine('Initializing...');
       _connectIq = await FlutterWatchGarminConnectIq.initialize(
-        InitOptions(
-          applicationIds: [_applicationId],
-          iosOptions: InitIosOptions(urlScheme: ''),
-          androidOptions: InitAndroidOptions(connectType: ConnectType.adb),
-        ),
-      );
+          InitOptions(
+            applicationIds: [_applicationId],
+            iosOptions: InitIosOptions(urlScheme: ''),
+            androidOptions:
+                InitAndroidOptions(connectType: ConnectType.wireless),
+          ), showGcmInstallDialog: (requireUpgrade) {
+        final navContext = _navigatorKey.currentContext;
+        if (navContext == null) {
+          _logger.severe('Navigation context is not (yet)? defined.');
+          return;
+        }
+        showDialog(
+            context: navContext,
+            builder: (context) {
+              return AlertDialog(
+                title: Text('Requires GCM'),
+                content: Text('Garmin Connect Mobile required.'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text("Cancel"),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      FlutterWatchGarminConnectIq.openStoreForGcm();
+                      Navigator.of(context).pop();
+                    },
+                    child: Text("Install"),
+                  ),
+                ],
+              );
+            });
+      });
       _logger.fine('initialized connectiq sdk');
       setState(() {
         _initialized = true;
@@ -63,6 +93,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     final devices = useValueListenable(this.devices);
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       home: Scaffold(
         appBar: AppBar(
           title: const Text('ConnectIQ example app'),
@@ -73,7 +104,14 @@ class _MyAppState extends State<MyApp> {
               title: Text('Initialized: $_initialized'),
             ),
             ...?(devices.isEmpty
-                ? null
+                ? [
+                    ElevatedButton(
+                      onPressed: () {
+                        initPlatformState();
+                      },
+                      child: Text('Start init'),
+                    ),
+                  ]
                 : [
                     const SizedBox(height: 16),
                     const Text('Devices: '),

@@ -24,15 +24,28 @@ class FlutterWatchGarminConnectIq {
     })();
   }
 
+  static Future<void> openStoreForGcm() async {
+    ConnectIqHostApi().openStoreForGcm();
+  }
+
   static Future<FlutterWatchGarminConnectIq> initialize(
-      InitOptions initOptions) async {
+    InitOptions initOptions, {
+    required void Function(bool requiresUpgrade) showGcmInstallDialog,
+  }) async {
     final hostApi = ConnectIqHostApi();
     final initialized = await hostApi.initialize(initOptions);
-    if (!initialized) {
-      throw StateError('Unable to initialize.');
+    switch (initialized.status) {
+      case InitStatus.success:
+        return FlutterWatchGarminConnectIq._(
+            hostApi, initOptions.applicationIds.map((e) => e!).toList());
+      case InitStatus.errorGcmNotInstalled:
+      case InitStatus.errorGcmUpgradeNeeded:
+        showGcmInstallDialog(
+            initialized.status == InitStatus.errorGcmUpgradeNeeded);
+        throw StateError('GCM Missing');
+      case InitStatus.errorServiceError:
+        throw StateError('Unable to initialize.');
     }
-    return FlutterWatchGarminConnectIq._(
-        hostApi, initOptions.applicationIds.map((e) => e!).toList());
   }
 
   ValueListenable<List<PigeonIqDevice>> getKnownDevices() => _knownDevices;
@@ -81,6 +94,9 @@ class _FlutterConnectIqApiImpl implements FlutterConnectIqApi {
       data: message,
     ));
   }
+
+  @override
+  void showGcmInstallDialog(bool requiresUpgrade) {}
 }
 
 class ConnectIqMessage {

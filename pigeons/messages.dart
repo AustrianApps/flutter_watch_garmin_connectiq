@@ -122,10 +122,24 @@ enum ConnectType {
   adb,
 }
 
+enum InitStatus {
+  success,
+  errorGcmNotInstalled,
+  errorGcmUpgradeNeeded,
+  errorServiceError,
+}
+
+class InitResult {
+  InitResult({
+    required this.status,
+  });
+  final InitStatus status;
+}
+
 @HostApi()
 abstract class ConnectIqHostApi {
   @async
-  bool initialize(InitOptions initOptions);
+  InitResult initialize(InitOptions initOptions);
 
   @async
   List<PigeonIqDevice> getKnownDevices();
@@ -154,6 +168,9 @@ abstract class ConnectIqHostApi {
     String applicationId,
     Map<String, Object> message,
   );
+
+  @async
+  void openStoreForGcm();
 }
 
 @FlutterApi()
@@ -166,4 +183,5 @@ abstract class FlutterConnectIqApi {
     PigeonIqApp app,
     Object message,
   );
+  void showGcmInstallDialog(bool requiresUpgrade);
 }

@@ -72,6 +72,13 @@ enum ConnectType: Int {
   case adb = 1
 }
 
+enum InitStatus: Int {
+  case success = 0
+  case errorGcmNotInstalled = 1
+  case errorGcmUpgradeNeeded = 2
+  case errorServiceError = 3
+}
+
 /// Generated class from Pigeon that represents data sent in messages.
 struct PigeonIqDevice {
   var deviceIdentifier: Int64
@@ -230,6 +237,24 @@ struct InitOptions {
   }
 }
 
+/// Generated class from Pigeon that represents data sent in messages.
+struct InitResult {
+  var status: InitStatus
+
+  static func fromList(_ list: [Any?]) -> InitResult? {
+    let status = InitStatus(rawValue: list[0] as! Int)!
+
+    return InitResult(
+      status: status
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      status.rawValue,
+    ]
+  }
+}
+
 private class ConnectIqHostApiCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
@@ -240,12 +265,14 @@ private class ConnectIqHostApiCodecReader: FlutterStandardReader {
       case 130:
         return InitOptions.fromList(self.readValue() as! [Any?])
       case 131:
-        return PigeonIqApp.fromList(self.readValue() as! [Any?])
+        return InitResult.fromList(self.readValue() as! [Any?])
       case 132:
-        return PigeonIqDevice.fromList(self.readValue() as! [Any?])
+        return PigeonIqApp.fromList(self.readValue() as! [Any?])
       case 133:
-        return PigeonIqMessageResult.fromList(self.readValue() as! [Any?])
+        return PigeonIqDevice.fromList(self.readValue() as! [Any?])
       case 134:
+        return PigeonIqMessageResult.fromList(self.readValue() as! [Any?])
+      case 135:
         return PigeonIqOpenApplicationResult.fromList(self.readValue() as! [Any?])
       default:
         return super.readValue(ofType: type)
@@ -264,17 +291,20 @@ private class ConnectIqHostApiCodecWriter: FlutterStandardWriter {
     } else if let value = value as? InitOptions {
       super.writeByte(130)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqApp {
+    } else if let value = value as? InitResult {
       super.writeByte(131)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqDevice {
+    } else if let value = value as? PigeonIqApp {
       super.writeByte(132)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqMessageResult {
+    } else if let value = value as? PigeonIqDevice {
       super.writeByte(133)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqOpenApplicationResult {
+    } else if let value = value as? PigeonIqMessageResult {
       super.writeByte(134)
+      super.writeValue(value.toList())
+    } else if let value = value as? PigeonIqOpenApplicationResult {
+      super.writeByte(135)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -298,13 +328,14 @@ class ConnectIqHostApiCodec: FlutterStandardMessageCodec {
 
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol ConnectIqHostApi {
-  func initialize(initOptions: InitOptions, completion: @escaping (Result<Bool, Error>) -> Void)
+  func initialize(initOptions: InitOptions, completion: @escaping (Result<InitResult, Error>) -> Void)
   func getKnownDevices(completion: @escaping (Result<[PigeonIqDevice], Error>) -> Void)
   func getConnectedDevices(completion: @escaping (Result<[PigeonIqDevice], Error>) -> Void)
   func getApplicationInfo(deviceId: Int64, applicationId: String, completion: @escaping (Result<PigeonIqApp, Error>) -> Void)
   func openApplication(deviceId: Int64, applicationId: String, completion: @escaping (Result<PigeonIqOpenApplicationResult, Error>) -> Void)
   func openStore(storeId: String, completion: @escaping (Result<Bool, Error>) -> Void)
   func sendMessage(deviceId: Int64, applicationId: String, message: [String: Any], completion: @escaping (Result<PigeonIqMessageResult, Error>) -> Void)
+  func openStoreForGcm(completion: @escaping (Result<Void, Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -432,6 +463,21 @@ class ConnectIqHostApiSetup {
     } else {
       sendMessageChannel.setMessageHandler(nil)
     }
+    let openStoreForGcmChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.openStoreForGcm", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      openStoreForGcmChannel.setMessageHandler { _, reply in
+        api.openStoreForGcm() { result in
+          switch result {
+            case .success:
+              reply(wrapResult(nil))
+            case .failure(let error):
+              reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      openStoreForGcmChannel.setMessageHandler(nil)
+    }
   }
 }
 private class FlutterConnectIqApiCodecReader: FlutterStandardReader {
@@ -444,12 +490,14 @@ private class FlutterConnectIqApiCodecReader: FlutterStandardReader {
       case 130:
         return InitOptions.fromList(self.readValue() as! [Any?])
       case 131:
-        return PigeonIqApp.fromList(self.readValue() as! [Any?])
+        return InitResult.fromList(self.readValue() as! [Any?])
       case 132:
-        return PigeonIqDevice.fromList(self.readValue() as! [Any?])
+        return PigeonIqApp.fromList(self.readValue() as! [Any?])
       case 133:
-        return PigeonIqMessageResult.fromList(self.readValue() as! [Any?])
+        return PigeonIqDevice.fromList(self.readValue() as! [Any?])
       case 134:
+        return PigeonIqMessageResult.fromList(self.readValue() as! [Any?])
+      case 135:
         return PigeonIqOpenApplicationResult.fromList(self.readValue() as! [Any?])
       default:
         return super.readValue(ofType: type)
@@ -468,17 +516,20 @@ private class FlutterConnectIqApiCodecWriter: FlutterStandardWriter {
     } else if let value = value as? InitOptions {
       super.writeByte(130)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqApp {
+    } else if let value = value as? InitResult {
       super.writeByte(131)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqDevice {
+    } else if let value = value as? PigeonIqApp {
       super.writeByte(132)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqMessageResult {
+    } else if let value = value as? PigeonIqDevice {
       super.writeByte(133)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqOpenApplicationResult {
+    } else if let value = value as? PigeonIqMessageResult {
       super.writeByte(134)
+      super.writeValue(value.toList())
+    } else if let value = value as? PigeonIqOpenApplicationResult {
+      super.writeByte(135)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -518,6 +569,12 @@ class FlutterConnectIqApi {
   func onMessageReceived(device deviceArg: PigeonIqDevice, app appArg: PigeonIqApp, message messageArg: Any, completion: @escaping () -> Void) {
     let channel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.flutter_watch_garmin_connectiq.FlutterConnectIqApi.onMessageReceived", binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([deviceArg, appArg, messageArg] as [Any?]) { _ in
+      completion()
+    }
+  }
+  func showGcmInstallDialog(requiresUpgrade requiresUpgradeArg: Bool, completion: @escaping () -> Void) {
+    let channel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.flutter_watch_garmin_connectiq.FlutterConnectIqApi.showGcmInstallDialog", binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([requiresUpgradeArg] as [Any?]) { _ in
       completion()
     }
   }

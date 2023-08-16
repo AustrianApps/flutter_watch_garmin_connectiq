@@ -46,6 +46,13 @@ enum ConnectType {
   adb,
 }
 
+enum InitStatus {
+  success,
+  errorGcmNotInstalled,
+  errorGcmUpgradeNeeded,
+  errorServiceError,
+}
+
 class PigeonIqDevice {
   PigeonIqDevice({
     required this.deviceIdentifier,
@@ -233,6 +240,27 @@ class InitOptions {
   }
 }
 
+class InitResult {
+  InitResult({
+    required this.status,
+  });
+
+  InitStatus status;
+
+  Object encode() {
+    return <Object?>[
+      status.index,
+    ];
+  }
+
+  static InitResult decode(Object result) {
+    result as List<Object?>;
+    return InitResult(
+      status: InitStatus.values[result[0]! as int],
+    );
+  }
+}
+
 class _ConnectIqHostApiCodec extends StandardMessageCodec {
   const _ConnectIqHostApiCodec();
   @override
@@ -246,17 +274,20 @@ class _ConnectIqHostApiCodec extends StandardMessageCodec {
     } else if (value is InitOptions) {
       buffer.putUint8(130);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqApp) {
+    } else if (value is InitResult) {
       buffer.putUint8(131);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqDevice) {
+    } else if (value is PigeonIqApp) {
       buffer.putUint8(132);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqMessageResult) {
+    } else if (value is PigeonIqDevice) {
       buffer.putUint8(133);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqOpenApplicationResult) {
+    } else if (value is PigeonIqMessageResult) {
       buffer.putUint8(134);
+      writeValue(buffer, value.encode());
+    } else if (value is PigeonIqOpenApplicationResult) {
+      buffer.putUint8(135);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -273,12 +304,14 @@ class _ConnectIqHostApiCodec extends StandardMessageCodec {
       case 130: 
         return InitOptions.decode(readValue(buffer)!);
       case 131: 
-        return PigeonIqApp.decode(readValue(buffer)!);
+        return InitResult.decode(readValue(buffer)!);
       case 132: 
-        return PigeonIqDevice.decode(readValue(buffer)!);
+        return PigeonIqApp.decode(readValue(buffer)!);
       case 133: 
-        return PigeonIqMessageResult.decode(readValue(buffer)!);
+        return PigeonIqDevice.decode(readValue(buffer)!);
       case 134: 
+        return PigeonIqMessageResult.decode(readValue(buffer)!);
+      case 135: 
         return PigeonIqOpenApplicationResult.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -296,7 +329,7 @@ class ConnectIqHostApi {
 
   static const MessageCodec<Object?> codec = _ConnectIqHostApiCodec();
 
-  Future<bool> initialize(InitOptions arg_initOptions) async {
+  Future<InitResult> initialize(InitOptions arg_initOptions) async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.initialize', codec,
         binaryMessenger: _binaryMessenger);
@@ -319,7 +352,7 @@ class ConnectIqHostApi {
         message: 'Host platform returned null value for non-null return value.',
       );
     } else {
-      return (replyList[0] as bool?)!;
+      return (replyList[0] as InitResult?)!;
     }
   }
 
@@ -484,6 +517,28 @@ class ConnectIqHostApi {
       return (replyList[0] as PigeonIqMessageResult?)!;
     }
   }
+
+  Future<void> openStoreForGcm() async {
+    final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.openStoreForGcm', codec,
+        binaryMessenger: _binaryMessenger);
+    final List<Object?>? replyList =
+        await channel.send(null) as List<Object?>?;
+    if (replyList == null) {
+      throw PlatformException(
+        code: 'channel-error',
+        message: 'Unable to establish connection on channel.',
+      );
+    } else if (replyList.length > 1) {
+      throw PlatformException(
+        code: replyList[0]! as String,
+        message: replyList[1] as String?,
+        details: replyList[2],
+      );
+    } else {
+      return;
+    }
+  }
 }
 
 class _FlutterConnectIqApiCodec extends StandardMessageCodec {
@@ -499,17 +554,20 @@ class _FlutterConnectIqApiCodec extends StandardMessageCodec {
     } else if (value is InitOptions) {
       buffer.putUint8(130);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqApp) {
+    } else if (value is InitResult) {
       buffer.putUint8(131);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqDevice) {
+    } else if (value is PigeonIqApp) {
       buffer.putUint8(132);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqMessageResult) {
+    } else if (value is PigeonIqDevice) {
       buffer.putUint8(133);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqOpenApplicationResult) {
+    } else if (value is PigeonIqMessageResult) {
       buffer.putUint8(134);
+      writeValue(buffer, value.encode());
+    } else if (value is PigeonIqOpenApplicationResult) {
+      buffer.putUint8(135);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -526,12 +584,14 @@ class _FlutterConnectIqApiCodec extends StandardMessageCodec {
       case 130: 
         return InitOptions.decode(readValue(buffer)!);
       case 131: 
-        return PigeonIqApp.decode(readValue(buffer)!);
+        return InitResult.decode(readValue(buffer)!);
       case 132: 
-        return PigeonIqDevice.decode(readValue(buffer)!);
+        return PigeonIqApp.decode(readValue(buffer)!);
       case 133: 
-        return PigeonIqMessageResult.decode(readValue(buffer)!);
+        return PigeonIqDevice.decode(readValue(buffer)!);
       case 134: 
+        return PigeonIqMessageResult.decode(readValue(buffer)!);
+      case 135: 
         return PigeonIqOpenApplicationResult.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -545,6 +605,8 @@ abstract class FlutterConnectIqApi {
   void onDeviceStatusChanged(PigeonIqDevice device);
 
   void onMessageReceived(PigeonIqDevice device, PigeonIqApp app, Object message);
+
+  void showGcmInstallDialog(bool requiresUpgrade);
 
   static void setup(FlutterConnectIqApi? api, {BinaryMessenger? binaryMessenger}) {
     {
@@ -587,6 +649,25 @@ abstract class FlutterConnectIqApi {
           assert(arg_message != null,
               'Argument for dev.flutter.pigeon.flutter_watch_garmin_connectiq.FlutterConnectIqApi.onMessageReceived was null, expected non-null Object.');
           api.onMessageReceived(arg_device!, arg_app!, arg_message!);
+          return;
+        });
+      }
+    }
+    {
+      final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.flutter_watch_garmin_connectiq.FlutterConnectIqApi.showGcmInstallDialog', codec,
+          binaryMessenger: binaryMessenger);
+      if (api == null) {
+        channel.setMessageHandler(null);
+      } else {
+        channel.setMessageHandler((Object? message) async {
+          assert(message != null,
+          'Argument for dev.flutter.pigeon.flutter_watch_garmin_connectiq.FlutterConnectIqApi.showGcmInstallDialog was null.');
+          final List<Object?> args = (message as List<Object?>?)!;
+          final bool? arg_requiresUpgrade = (args[0] as bool?);
+          assert(arg_requiresUpgrade != null,
+              'Argument for dev.flutter.pigeon.flutter_watch_garmin_connectiq.FlutterConnectIqApi.showGcmInstallDialog was null, expected non-null bool.');
+          api.showGcmInstallDialog(arg_requiresUpgrade!);
           return;
         });
       }

@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="pigeon" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application">
+    <option name="VMOptions" value="pub run pigeon --input " />
+    <option name="checkedMode" value="false" />
+    <option name="filePath" value="$PROJECT_DIR$/pigeons/messages.dart" />
+    <method v="2" />
+  </configuration>
+</component>
