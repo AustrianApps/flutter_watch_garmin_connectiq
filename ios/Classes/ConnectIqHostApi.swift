@@ -54,7 +54,7 @@ class ConnectIqHostApiImpl: NSObject {
     guard let devices = connectIQ.parseDeviceSelectionResponse(from: url)?.compactMap({ $0 as? IQDevice }) else {
       return
     }
-    UserDefaults.standard.set(url, forKey: "gcmdevices")
+    UserDefaults.standard.set(url, forKey: cachedDevicesUrl)
     self.devices = Dictionary(uniqueKeysWithValues: zip(devices.map { $0.uuid! }, devices))
     
     guard let initOptions = initOptions else {
