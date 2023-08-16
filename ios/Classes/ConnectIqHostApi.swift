@@ -254,7 +254,16 @@ extension ConnectIqHostApiImpl: IQDeviceEventDelegate {
 }
 
 extension ConnectIqHostApiImpl: IQAppMessageDelegate {
-  func receivedMessage(_ message: Any!, from app: IQApp!) {
+  func receivedMessage(_ message: Any, from app: IQApp!) {
     logger.debug("Received message. \(String(reflecting: message))")
+    flutterConnectIqApi.onMessageReceived(device: app.device.toPigeon(status: .connected), app: app.toPigeon(), message: message) {
+      
+    }
+  }
+}
+
+extension IQApp {
+  func toPigeon() -> PigeonIqApp {
+    return PigeonIqApp(applicationId: uuid.uuidString, status: .installed, displayName: "", version: Int64(0))
   }
 }
