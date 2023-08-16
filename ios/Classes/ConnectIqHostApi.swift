@@ -51,6 +51,7 @@ class ConnectIqHostApiImpl: NSObject {
   }
   
   func openFromGCM(url: URL) {
+    logger.debug("parsing url: \(url)")
     guard let devices = connectIQ.parseDeviceSelectionResponse(from: url)?.compactMap({ $0 as? IQDevice }) else {
       return
     }
@@ -144,8 +145,7 @@ extension ConnectIqHostApiImpl: ConnectIqHostApi {
   func initialize(initOptions: InitOptions, completion: @escaping (Result<InitResult, Error>) -> Void) {
     self.initOptions = initOptions
     connectIQ.initialize(withUrlScheme: initOptions.iosOptions.urlScheme, uiOverrideDelegate: self)
-    if let cachedUrlString = UserDefaults.standard.string(forKey: cachedDevicesUrl),
-       let cachedUrl = URL(string: cachedUrlString) {
+    if let cachedUrl = UserDefaults.standard.url(forKey: cachedDevicesUrl) {
       openFromGCM(url: cachedUrl)
     }
     logger.debug("Initialize done.")
