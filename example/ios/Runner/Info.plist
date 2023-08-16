@@ -43,6 +43,8 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Connect to garmin watches</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Connect to garmin watches</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

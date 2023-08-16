@@ -1,7 +1,7 @@
-import Flutter
-import UIKit
-import os
 import ConnectIQ
+import Flutter
+import os
+import UIKit
 
 private let logger = Logger(
   subsystem: "flutter_watch_garmin_connectiq",
@@ -13,28 +13,59 @@ public class FlutterWatchGarminConnectIqPlugin: NSObject, FlutterPlugin {
   }
   
   private let flutterConnectIqApi: FlutterConnectIqApi
-  private let connectIqHostApiImpl: ConnectIqHostApiImpl
+  private lazy var connectIqHostApiImpl: ConnectIqHostApiImpl = .init(
+    flutterConnectIqApi: flutterConnectIqApi,
+    plugin: self)
 
   init(registrar: FlutterPluginRegistrar) {
     flutterConnectIqApi = FlutterConnectIqApi(binaryMessenger: registrar.messenger())
-    connectIqHostApiImpl = ConnectIqHostApiImpl(flutterConnectIqApi: flutterConnectIqApi)
+    super.init()
     ConnectIqHostApiSetup.setUp(
       binaryMessenger: registrar.messenger(),
       api: connectIqHostApiImpl)
-    super.init()
     registrar.addApplicationDelegate(self)
   }
   
-  public func application(_ application: UIApplication, open url: URL, sourceApplication: String, annotation: Any) -> Bool {
+  public func applicationDidBecomeActive(_ application: UIApplication) {
+    logger.debug("applicationDidBecomeActive")
+  }
+  
+  public func applicationWillResignActive(_ application: UIApplication) {
+    logger.debug("")
+  }
+  
+  public func application(_ application: UIApplication, willFinishLaunchingWithOptions launchOptions: [AnyHashable: Any] = [:]) -> Bool {
+    logger.debug("application willFinishLaunchingWithOptions: \(launchOptions)")
+    return false
+  }
+  
+  public func application(_ application: UIApplication, handleOpen url: URL) -> Bool {
+    logger.debug("handleOpen: \(url)")
+    return false
+  }
+  
+  private func handleOpenURL(_ url: URL) -> Bool {
     if let initOptions = connectIqHostApiImpl.initOptions {
-      if (url.scheme == initOptions.iosOptions.urlScheme) {
+      if url.scheme == initOptions.iosOptions.urlScheme {
         logger.debug("Got our url scheme. manage application list.")
-        if (sourceApplication == IQGCMBundle) {
-          logger.debug("Received from GCM")
-          connectIqHostApiImpl.openFromGCM(url: url)
-        }
+        connectIqHostApiImpl.openFromGCM(url: url)
+        return true
       }
     }
+    return false
+  }
+  
+  public func application(_ application: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    logger.debug("application open URL: \(url) , options: \(options)")
+    return handleOpenURL(url)
+  }
+  
+  public func application(_ application: UIApplication, open url: URL, sourceApplication: String, annotation: Any) -> Bool {
+    if sourceApplication == IQGCMBundle {
+      logger.debug("Received from GCM")
+      return handleOpenURL(url)
+    }
+    logger.debug("application open URL with annotation: \(url)")
     return false
   }
 }

@@ -11,7 +11,7 @@ import Foundation
 import os
 
 /// name of the UserDefaults entry storing the last received device list.
-private let cachedDevicesUrl = "gcmdevices"
+private let cachedDevicesUrl = "com.austrianapps.flutter_watch_garmin_connectiq.gcmdevices"
 
 private let logger = Logger(
   subsystem: "flutter_watch_garmin_connectiq",
@@ -43,9 +43,11 @@ class ConnectIqHostApiImpl: NSObject {
   private lazy var connectIQ: ConnectIQ = .sharedInstance()
   var devices: [UUID: IQDevice] = [:]
   var deviceStatus: [UUID: IQDeviceStatus] = [:]
+  private let plugin: FlutterWatchGarminConnectIqPlugin
   
-  init(flutterConnectIqApi: FlutterConnectIqApi) {
+  init(flutterConnectIqApi: FlutterConnectIqApi, plugin: FlutterWatchGarminConnectIqPlugin) {
     self.flutterConnectIqApi = flutterConnectIqApi
+    self.plugin = plugin
   }
   
   func openFromGCM(url: URL) {
@@ -142,6 +144,10 @@ extension ConnectIqHostApiImpl: ConnectIqHostApi {
   func initialize(initOptions: InitOptions, completion: @escaping (Result<InitResult, Error>) -> Void) {
     self.initOptions = initOptions
     connectIQ.initialize(withUrlScheme: initOptions.iosOptions.urlScheme, uiOverrideDelegate: self)
+    if let cachedUrlString = UserDefaults.standard.string(forKey: cachedDevicesUrl),
+       let cachedUrl = URL(string: cachedUrlString) {
+      openFromGCM(url: cachedUrl)
+    }
     logger.debug("Initialize done.")
     completion(.success(InitResult(status: InitStatus.success)))
   }

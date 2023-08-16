@@ -90,8 +90,14 @@ class _FlutterConnectIqApiImpl implements FlutterConnectIqApi {
         'onDeviceStatusChanged(${device.friendlyName}, ${device.status})');
     final devices = _connectIq._knownDevices;
     final v = devices.value;
-    devices.value = List.unmodifiable(v.map(
-        (e) => e.deviceIdentifier == device.deviceIdentifier ? device : e));
+    final idx = v.indexWhere(
+        (element) => element.deviceIdentifier == device.deviceIdentifier);
+    if (idx < 0) {
+      devices.value = List.unmodifiable([...v, device]);
+    } else {
+      devices.value = List.unmodifiable(v.map(
+          (e) => e.deviceIdentifier == device.deviceIdentifier ? device : e));
+    }
   }
 
   @override
