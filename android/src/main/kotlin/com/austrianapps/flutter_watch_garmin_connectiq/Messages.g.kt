@@ -126,7 +126,7 @@ enum class InitStatus(val raw: Int) {
 
 /** Generated class from Pigeon that represents data sent in messages. */
 data class PigeonIqDevice (
-  val deviceIdentifier: Long,
+  val deviceIdentifier: String,
   val friendlyName: String,
   val status: PigeonIqDeviceStatus
 
@@ -134,7 +134,7 @@ data class PigeonIqDevice (
   companion object {
     @Suppress("UNCHECKED_CAST")
     fun fromList(list: List<Any?>): PigeonIqDevice {
-      val deviceIdentifier = list[0].let { if (it is Int) it.toLong() else it as Long }
+      val deviceIdentifier = list[0] as String
       val friendlyName = list[1] as String
       val status = PigeonIqDeviceStatus.ofRaw(list[2] as Int)!!
       return PigeonIqDevice(deviceIdentifier, friendlyName, status)
@@ -198,19 +198,22 @@ data class PigeonIqOpenApplicationResult (
 
 /** Generated class from Pigeon that represents data sent in messages. */
 data class PigeonIqMessageResult (
-  val status: PigeonIqMessageStatus
+  val status: PigeonIqMessageStatus,
+  val failureDetails: String? = null
 
 ) {
   companion object {
     @Suppress("UNCHECKED_CAST")
     fun fromList(list: List<Any?>): PigeonIqMessageResult {
       val status = PigeonIqMessageStatus.ofRaw(list[0] as Int)!!
-      return PigeonIqMessageResult(status)
+      val failureDetails = list[1] as String?
+      return PigeonIqMessageResult(status, failureDetails)
     }
   }
   fun toList(): List<Any?> {
     return listOf<Any?>(
       status.raw,
+      failureDetails,
     )
   }
 }
@@ -257,8 +260,30 @@ data class InitIosOptions (
 }
 
 /** Generated class from Pigeon that represents data sent in messages. */
+data class AppId (
+  val applicationId: String,
+  val storeId: String? = null
+
+) {
+  companion object {
+    @Suppress("UNCHECKED_CAST")
+    fun fromList(list: List<Any?>): AppId {
+      val applicationId = list[0] as String
+      val storeId = list[1] as String?
+      return AppId(applicationId, storeId)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf<Any?>(
+      applicationId,
+      storeId,
+    )
+  }
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
 data class InitOptions (
-  val applicationIds: List<String?>,
+  val applicationIds: List<AppId?>,
   val iosOptions: InitIosOptions,
   val androidOptions: InitAndroidOptions
 
@@ -266,7 +291,7 @@ data class InitOptions (
   companion object {
     @Suppress("UNCHECKED_CAST")
     fun fromList(list: List<Any?>): InitOptions {
-      val applicationIds = list[0] as List<String?>
+      val applicationIds = list[0] as List<AppId?>
       val iosOptions = InitIosOptions.fromList(list[1] as List<Any?>)
       val androidOptions = InitAndroidOptions.fromList(list[2] as List<Any?>)
       return InitOptions(applicationIds, iosOptions, androidOptions)
@@ -306,40 +331,45 @@ private object ConnectIqHostApiCodec : StandardMessageCodec() {
     return when (type) {
       128.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          InitAndroidOptions.fromList(it)
+          AppId.fromList(it)
         }
       }
       129.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          InitIosOptions.fromList(it)
+          InitAndroidOptions.fromList(it)
         }
       }
       130.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          InitOptions.fromList(it)
+          InitIosOptions.fromList(it)
         }
       }
       131.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          InitResult.fromList(it)
+          InitOptions.fromList(it)
         }
       }
       132.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          PigeonIqApp.fromList(it)
+          InitResult.fromList(it)
         }
       }
       133.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          PigeonIqDevice.fromList(it)
+          PigeonIqApp.fromList(it)
         }
       }
       134.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          PigeonIqMessageResult.fromList(it)
+          PigeonIqDevice.fromList(it)
         }
       }
       135.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          PigeonIqMessageResult.fromList(it)
+        }
+      }
+      136.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           PigeonIqOpenApplicationResult.fromList(it)
         }
@@ -349,36 +379,40 @@ private object ConnectIqHostApiCodec : StandardMessageCodec() {
   }
   override fun writeValue(stream: ByteArrayOutputStream, value: Any?)   {
     when (value) {
-      is InitAndroidOptions -> {
+      is AppId -> {
         stream.write(128)
         writeValue(stream, value.toList())
       }
-      is InitIosOptions -> {
+      is InitAndroidOptions -> {
         stream.write(129)
         writeValue(stream, value.toList())
       }
-      is InitOptions -> {
+      is InitIosOptions -> {
         stream.write(130)
         writeValue(stream, value.toList())
       }
-      is InitResult -> {
+      is InitOptions -> {
         stream.write(131)
         writeValue(stream, value.toList())
       }
-      is PigeonIqApp -> {
+      is InitResult -> {
         stream.write(132)
         writeValue(stream, value.toList())
       }
-      is PigeonIqDevice -> {
+      is PigeonIqApp -> {
         stream.write(133)
         writeValue(stream, value.toList())
       }
-      is PigeonIqMessageResult -> {
+      is PigeonIqDevice -> {
         stream.write(134)
         writeValue(stream, value.toList())
       }
-      is PigeonIqOpenApplicationResult -> {
+      is PigeonIqMessageResult -> {
         stream.write(135)
+        writeValue(stream, value.toList())
+      }
+      is PigeonIqOpenApplicationResult -> {
+        stream.write(136)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -391,11 +425,12 @@ interface ConnectIqHostApi {
   fun initialize(initOptions: InitOptions, callback: (Result<InitResult>) -> Unit)
   fun getKnownDevices(callback: (Result<List<PigeonIqDevice>>) -> Unit)
   fun getConnectedDevices(callback: (Result<List<PigeonIqDevice>>) -> Unit)
-  fun getApplicationInfo(deviceId: Long, applicationId: String, callback: (Result<PigeonIqApp>) -> Unit)
-  fun openApplication(deviceId: Long, applicationId: String, callback: (Result<PigeonIqOpenApplicationResult>) -> Unit)
-  fun openStore(storeId: String, callback: (Result<Boolean>) -> Unit)
-  fun sendMessage(deviceId: Long, applicationId: String, message: Map<String, Any>, callback: (Result<PigeonIqMessageResult>) -> Unit)
+  fun getApplicationInfo(deviceId: String, applicationId: String, callback: (Result<PigeonIqApp>) -> Unit)
+  fun openApplication(deviceId: String, applicationId: String, callback: (Result<PigeonIqOpenApplicationResult>) -> Unit)
+  fun openStore(app: AppId, callback: (Result<Boolean>) -> Unit)
+  fun sendMessage(deviceId: String, applicationId: String, message: Map<String, Any>, callback: (Result<PigeonIqMessageResult>) -> Unit)
   fun openStoreForGcm(callback: (Result<Unit>) -> Unit)
+  fun iOsShowDeviceSelection(callback: (Result<Unit>) -> Unit)
 
   companion object {
     /** The codec used by ConnectIqHostApi. */
@@ -466,7 +501,7 @@ interface ConnectIqHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val deviceIdArg = args[0].let { if (it is Int) it.toLong() else it as Long }
+            val deviceIdArg = args[0] as String
             val applicationIdArg = args[1] as String
             api.getApplicationInfo(deviceIdArg, applicationIdArg) { result: Result<PigeonIqApp> ->
               val error = result.exceptionOrNull()
@@ -487,7 +522,7 @@ interface ConnectIqHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val deviceIdArg = args[0].let { if (it is Int) it.toLong() else it as Long }
+            val deviceIdArg = args[0] as String
             val applicationIdArg = args[1] as String
             api.openApplication(deviceIdArg, applicationIdArg) { result: Result<PigeonIqOpenApplicationResult> ->
               val error = result.exceptionOrNull()
@@ -508,8 +543,8 @@ interface ConnectIqHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val storeIdArg = args[0] as String
-            api.openStore(storeIdArg) { result: Result<Boolean> ->
+            val appArg = args[0] as AppId
+            api.openStore(appArg) { result: Result<Boolean> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(wrapError(error))
@@ -528,7 +563,7 @@ interface ConnectIqHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val deviceIdArg = args[0].let { if (it is Int) it.toLong() else it as Long }
+            val deviceIdArg = args[0] as String
             val applicationIdArg = args[1] as String
             val messageArg = args[2] as Map<String, Any>
             api.sendMessage(deviceIdArg, applicationIdArg, messageArg) { result: Result<PigeonIqMessageResult> ->
@@ -562,6 +597,23 @@ interface ConnectIqHostApi {
           channel.setMessageHandler(null)
         }
       }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.iOsShowDeviceSelection", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.iOsShowDeviceSelection() { result: Result<Unit> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                reply.reply(wrapResult(null))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
     }
   }
 }
@@ -571,40 +623,45 @@ private object FlutterConnectIqApiCodec : StandardMessageCodec() {
     return when (type) {
       128.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          InitAndroidOptions.fromList(it)
+          AppId.fromList(it)
         }
       }
       129.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          InitIosOptions.fromList(it)
+          InitAndroidOptions.fromList(it)
         }
       }
       130.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          InitOptions.fromList(it)
+          InitIosOptions.fromList(it)
         }
       }
       131.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          InitResult.fromList(it)
+          InitOptions.fromList(it)
         }
       }
       132.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          PigeonIqApp.fromList(it)
+          InitResult.fromList(it)
         }
       }
       133.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          PigeonIqDevice.fromList(it)
+          PigeonIqApp.fromList(it)
         }
       }
       134.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          PigeonIqMessageResult.fromList(it)
+          PigeonIqDevice.fromList(it)
         }
       }
       135.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          PigeonIqMessageResult.fromList(it)
+        }
+      }
+      136.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           PigeonIqOpenApplicationResult.fromList(it)
         }
@@ -614,36 +671,40 @@ private object FlutterConnectIqApiCodec : StandardMessageCodec() {
   }
   override fun writeValue(stream: ByteArrayOutputStream, value: Any?)   {
     when (value) {
-      is InitAndroidOptions -> {
+      is AppId -> {
         stream.write(128)
         writeValue(stream, value.toList())
       }
-      is InitIosOptions -> {
+      is InitAndroidOptions -> {
         stream.write(129)
         writeValue(stream, value.toList())
       }
-      is InitOptions -> {
+      is InitIosOptions -> {
         stream.write(130)
         writeValue(stream, value.toList())
       }
-      is InitResult -> {
+      is InitOptions -> {
         stream.write(131)
         writeValue(stream, value.toList())
       }
-      is PigeonIqApp -> {
+      is InitResult -> {
         stream.write(132)
         writeValue(stream, value.toList())
       }
-      is PigeonIqDevice -> {
+      is PigeonIqApp -> {
         stream.write(133)
         writeValue(stream, value.toList())
       }
-      is PigeonIqMessageResult -> {
+      is PigeonIqDevice -> {
         stream.write(134)
         writeValue(stream, value.toList())
       }
-      is PigeonIqOpenApplicationResult -> {
+      is PigeonIqMessageResult -> {
         stream.write(135)
+        writeValue(stream, value.toList())
+      }
+      is PigeonIqOpenApplicationResult -> {
+        stream.write(136)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)

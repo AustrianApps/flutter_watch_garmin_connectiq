@@ -13,10 +13,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.lang.UnsupportedOperationException
 import java.util.Date
 
 
-data class AppCacheKey(val deviceId: Long, val applicationId: MyUui)
+data class AppCacheKey(val deviceId: String, val applicationId: MyUui)
 
 data class AppCacheValue(
     val app: IQApp,
@@ -49,7 +50,7 @@ class ConnectIqHostApiImpl(
     private var sdkReady = false
 
     private val appCache = mutableMapOf<AppCacheKey, IQApp?>()
-    private val knownDevices = mutableMapOf<Long, IQDevice>()
+    private val knownDevices = mutableMapOf<String, IQDevice>()
     private lateinit var applicationIds: List<String>
 
     private val scopeIo = CoroutineScope(Dispatchers.IO)
@@ -63,7 +64,7 @@ class ConnectIqHostApiImpl(
                 ConnectType.ADB -> ConnectIQ.IQConnectType.TETHERED
             }
         )
-        applicationIds = initOptions.applicationIds.filterNotNull()
+        applicationIds = initOptions.applicationIds.mapNotNull { it?.applicationId }
         initOptions.androidOptions.adbPort?.let { adbPort ->
             logd { "Setting adbPort to $adbPort" }
             connectIQ.adbPort = adbPort.toInt()
@@ -136,7 +137,7 @@ class ConnectIqHostApiImpl(
                         override fun onApplicationInfoReceived(app: IQApp) {
                             logd { "onApplicationInfoReceived: ${app.toDebugString()}" }
                             appCache[AppCacheKey(
-                                device.deviceIdentifier,
+                                device.deviceIdentifier.toString(),
                                 MyUui(app.applicationId)
                             )] = app
                             callback(Result.success(app))
@@ -171,7 +172,7 @@ class ConnectIqHostApiImpl(
     }
 
     private inline fun <T> withDevice(
-        deviceId: Long,
+        deviceId: String,
         callback: (Result<T>) -> Unit,
         body: (device: IQDevice) -> Unit
     ) {
@@ -183,7 +184,7 @@ class ConnectIqHostApiImpl(
     }
 
     override fun getApplicationInfo(
-        deviceId: Long,
+        deviceId: String,
         applicationId: String,
         callback: (Result<PigeonIqApp>) -> Unit
     ) {
@@ -202,7 +203,7 @@ class ConnectIqHostApiImpl(
     }
 
     private fun <T> withDeviceAndApp(
-        deviceId: Long,
+        deviceId: String,
         applicationId: String,
         callback: (Result<T>) -> Unit,
         body: (device: IQDevice, app: IQApp) -> Unit
@@ -225,7 +226,7 @@ class ConnectIqHostApiImpl(
     }
 
     override fun openApplication(
-        deviceId: Long,
+        deviceId: String,
         applicationId: String,
         callback: (Result<PigeonIqOpenApplicationResult>) -> Unit
     ) {
@@ -248,13 +249,15 @@ class ConnectIqHostApiImpl(
         }
     }
 
-    override fun openStore(storeId: String, callback: (Result<Boolean>) -> Unit) {
-        val result = connectIQ.openStore(storeId)
-        callback(Result.success(result))
+    override fun openStore(app: AppId, callback: (Result<Boolean>) -> Unit) {
+        app.storeId?.let { storeId ->
+            val result = connectIQ.openStore(storeId)
+            callback(Result.success(result))
+        } ?: callback(Result.failure(FlutterError("MissingStoreId")))
     }
 
     override fun sendMessage(
-        deviceId: Long,
+        deviceId: String,
         applicationId: String,
         message: Map<String, Any>,
         callback: (Result<PigeonIqMessageResult>) -> Unit
@@ -310,6 +313,10 @@ class ConnectIqHostApiImpl(
 
     }
 
+    override fun iOsShowDeviceSelection(callback: (Result<Unit>) -> Unit) {
+        callback(Result.failure(UnsupportedOperationException("Only used on iOS")))
+    }
+
     private suspend fun registerForAppEvents(device: IQDevice, app: IQApp) {
         val self = this
         withContext(Dispatchers.IO) {
@@ -341,7 +348,7 @@ class ConnectIqHostApiImpl(
     override fun onDeviceStatusChanged(device: IQDevice, status: IQDeviceStatus) {
         logd { "device $device changed status to: $status (vs ${device.status})" }
         val d = device.copy(newStatus = status)
-        knownDevices[device.deviceIdentifier] = d
+        knownDevices[device.deviceIdentifier.toString()] = d
         flutterConnectIqApi.onDeviceStatusChanged(d.toPigeonDevice()) {
         }
         if (d.status == IQDeviceStatus.CONNECTED) {
@@ -356,7 +363,7 @@ fun IQDevice.copy(newStatus: IQDeviceStatus?) =
     IQDevice(deviceIdentifier, friendlyName).also { it.status = newStatus ?: status }
 
 fun IQDevice.toPigeonDevice(newStatus: IQDeviceStatus? = null) = PigeonIqDevice(
-    deviceIdentifier,
+    deviceIdentifier.toString(),
     friendlyName,
     (newStatus ?: status).toPigeonDeviceStatus(),
 )

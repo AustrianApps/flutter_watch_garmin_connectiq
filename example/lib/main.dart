@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,11 +22,12 @@ class MyApp extends StatefulHookWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-const _applicationId = 'd7671b9b-1041-4c2c-925d-bab5e50302c3';
+final _applicationId =
+    AppId(applicationId: 'd7671b9b-1041-4c2c-925d-bab5e50302c3');
 // const _applicationId = 'D7671B9B10414C2C925DBAB5E50302C3';
 
 class _MyAppState extends State<MyApp> {
-  late final FlutterWatchGarminConnectIq _connectIq;
+  late FlutterWatchGarminConnectIq _connectIq;
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey();
   bool _initialized = false;
   ValueListenable<List<PigeonIqDevice>> devices =
@@ -44,10 +46,12 @@ class _MyAppState extends State<MyApp> {
       _connectIq = await FlutterWatchGarminConnectIq.initialize(
           InitOptions(
             applicationIds: [_applicationId],
-            iosOptions: InitIosOptions(urlScheme: ''),
+            iosOptions:
+                InitIosOptions(urlScheme: 'flutter-connectiq-example-382'),
             androidOptions:
                 InitAndroidOptions(connectType: ConnectType.wireless),
           ), showGcmInstallDialog: (requireUpgrade) {
+        _logger.info('Showing GCM Install Dialog.');
         final navContext = _navigatorKey.currentContext;
         if (navContext == null) {
           _logger.severe('Navigation context is not (yet)? defined.');
@@ -103,15 +107,17 @@ class _MyAppState extends State<MyApp> {
             ListTile(
               title: Text('Initialized: $_initialized'),
             ),
-            ...?(devices.isEmpty
-                ? [
-                    ElevatedButton(
-                      onPressed: () {
-                        initPlatformState();
-                      },
-                      child: Text('Start init'),
-                    ),
-                  ]
+            ...(devices.isEmpty
+                ? (Platform.isIOS
+                    ? [
+                        ElevatedButton(
+                          onPressed: () {
+                            _connectIq.iOsShowDeviceSelection();
+                          },
+                          child: Text('Show Device Selection'),
+                        ),
+                      ]
+                    : [])
                 : [
                     const SizedBox(height: 16),
                     const Text('Devices: '),
@@ -128,7 +134,8 @@ class _MyAppState extends State<MyApp> {
                             ElevatedButton(
                               onPressed: () async {
                                 final result = await _connectIq.openApplication(
-                                    e.deviceIdentifier, _applicationId);
+                                    e.deviceIdentifier,
+                                    _applicationId.applicationId);
                                 _logger.fine('result: ${result.status}');
                               },
                               child: Text('Open App'),
@@ -138,7 +145,7 @@ class _MyAppState extends State<MyApp> {
                               onPressed: () async {
                                 final result = await _connectIq.sendMessage(
                                   e.deviceIdentifier,
-                                  _applicationId,
+                                  _applicationId.applicationId,
                                   {'echo': 'Hello World!'},
                                 );
                                 _logger

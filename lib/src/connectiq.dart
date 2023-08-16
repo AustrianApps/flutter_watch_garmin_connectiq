@@ -13,10 +13,14 @@ class FlutterWatchGarminConnectIq {
   late final _messageReceivedController =
       StreamController<ConnectIqMessage>.broadcast();
   late final messageReceived = _messageReceivedController.stream;
+  final void Function(bool requiresUpgrade) showGcmInstallDialogCb;
 
-  FlutterWatchGarminConnectIq._(this.hostApi, List<String> applicationIds)
-      : _applications =
-            ValueNotifier({for (final e in applicationIds) e: null}) {
+  FlutterWatchGarminConnectIq._(
+    this.hostApi,
+    List<AppId> applicationIds, {
+    required this.showGcmInstallDialogCb,
+  }) : _applications = ValueNotifier(
+            {for (final e in applicationIds) e.applicationId: null}) {
     FlutterConnectIqApi.setup(_FlutterConnectIqApiImpl(this));
     (() async {
       _knownDevices.value = List.unmodifiable(
@@ -37,7 +41,10 @@ class FlutterWatchGarminConnectIq {
     switch (initialized.status) {
       case InitStatus.success:
         return FlutterWatchGarminConnectIq._(
-            hostApi, initOptions.applicationIds.map((e) => e!).toList());
+          hostApi,
+          initOptions.applicationIds.map((e) => e!).toList(),
+          showGcmInstallDialogCb: showGcmInstallDialog,
+        );
       case InitStatus.errorGcmNotInstalled:
       case InitStatus.errorGcmUpgradeNeeded:
         showGcmInstallDialog(
@@ -50,14 +57,18 @@ class FlutterWatchGarminConnectIq {
 
   ValueListenable<List<PigeonIqDevice>> getKnownDevices() => _knownDevices;
 
-  Future<PigeonIqMessageResult> sendMessage(
-      int deviceId, String applicationId, Map<String, Object> message) async {
+  Future<PigeonIqMessageResult> sendMessage(String deviceId,
+      String applicationId, Map<String, Object> message) async {
     return await hostApi.sendMessage(deviceId, applicationId, message);
   }
 
   Future<PigeonIqOpenApplicationResult> openApplication(
-          int deviceId, String applicationId) =>
+          String deviceId, String applicationId) =>
       hostApi.openApplication(deviceId, applicationId);
+
+  Future<void> iOsShowDeviceSelection() async {
+    await hostApi.iOsShowDeviceSelection();
+  }
 }
 
 // extension on PigeonIqDevice {
@@ -96,7 +107,9 @@ class _FlutterConnectIqApiImpl implements FlutterConnectIqApi {
   }
 
   @override
-  void showGcmInstallDialog(bool requiresUpgrade) {}
+  void showGcmInstallDialog(bool requiresUpgrade) {
+    _connectIq.showGcmInstallDialogCb(requiresUpgrade);
+  }
 }
 
 class ConnectIqMessage {

@@ -81,12 +81,12 @@ enum InitStatus: Int {
 
 /// Generated class from Pigeon that represents data sent in messages.
 struct PigeonIqDevice {
-  var deviceIdentifier: Int64
+  var deviceIdentifier: String
   var friendlyName: String
   var status: PigeonIqDeviceStatus
 
   static func fromList(_ list: [Any?]) -> PigeonIqDevice? {
-    let deviceIdentifier = list[0] is Int64 ? list[0] as! Int64 : Int64(list[0] as! Int32)
+    let deviceIdentifier = list[0] as! String
     let friendlyName = list[1] as! String
     let status = PigeonIqDeviceStatus(rawValue: list[2] as! Int)!
 
@@ -156,17 +156,21 @@ struct PigeonIqOpenApplicationResult {
 /// Generated class from Pigeon that represents data sent in messages.
 struct PigeonIqMessageResult {
   var status: PigeonIqMessageStatus
+  var failureDetails: String? = nil
 
   static func fromList(_ list: [Any?]) -> PigeonIqMessageResult? {
     let status = PigeonIqMessageStatus(rawValue: list[0] as! Int)!
+    let failureDetails: String? = nilOrValue(list[1])
 
     return PigeonIqMessageResult(
-      status: status
+      status: status,
+      failureDetails: failureDetails
     )
   }
   func toList() -> [Any?] {
     return [
       status.rawValue,
+      failureDetails,
     ]
   }
 }
@@ -212,13 +216,35 @@ struct InitIosOptions {
 }
 
 /// Generated class from Pigeon that represents data sent in messages.
+struct AppId {
+  var applicationId: String
+  var storeId: String? = nil
+
+  static func fromList(_ list: [Any?]) -> AppId? {
+    let applicationId = list[0] as! String
+    let storeId: String? = nilOrValue(list[1])
+
+    return AppId(
+      applicationId: applicationId,
+      storeId: storeId
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      applicationId,
+      storeId,
+    ]
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
 struct InitOptions {
-  var applicationIds: [String?]
+  var applicationIds: [AppId?]
   var iosOptions: InitIosOptions
   var androidOptions: InitAndroidOptions
 
   static func fromList(_ list: [Any?]) -> InitOptions? {
-    let applicationIds = list[0] as! [String?]
+    let applicationIds = list[0] as! [AppId?]
     let iosOptions = InitIosOptions.fromList(list[1] as! [Any?])!
     let androidOptions = InitAndroidOptions.fromList(list[2] as! [Any?])!
 
@@ -259,20 +285,22 @@ private class ConnectIqHostApiCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
       case 128:
-        return InitAndroidOptions.fromList(self.readValue() as! [Any?])
+        return AppId.fromList(self.readValue() as! [Any?])
       case 129:
-        return InitIosOptions.fromList(self.readValue() as! [Any?])
+        return InitAndroidOptions.fromList(self.readValue() as! [Any?])
       case 130:
-        return InitOptions.fromList(self.readValue() as! [Any?])
+        return InitIosOptions.fromList(self.readValue() as! [Any?])
       case 131:
-        return InitResult.fromList(self.readValue() as! [Any?])
+        return InitOptions.fromList(self.readValue() as! [Any?])
       case 132:
-        return PigeonIqApp.fromList(self.readValue() as! [Any?])
+        return InitResult.fromList(self.readValue() as! [Any?])
       case 133:
-        return PigeonIqDevice.fromList(self.readValue() as! [Any?])
+        return PigeonIqApp.fromList(self.readValue() as! [Any?])
       case 134:
-        return PigeonIqMessageResult.fromList(self.readValue() as! [Any?])
+        return PigeonIqDevice.fromList(self.readValue() as! [Any?])
       case 135:
+        return PigeonIqMessageResult.fromList(self.readValue() as! [Any?])
+      case 136:
         return PigeonIqOpenApplicationResult.fromList(self.readValue() as! [Any?])
       default:
         return super.readValue(ofType: type)
@@ -282,29 +310,32 @@ private class ConnectIqHostApiCodecReader: FlutterStandardReader {
 
 private class ConnectIqHostApiCodecWriter: FlutterStandardWriter {
   override func writeValue(_ value: Any) {
-    if let value = value as? InitAndroidOptions {
+    if let value = value as? AppId {
       super.writeByte(128)
       super.writeValue(value.toList())
-    } else if let value = value as? InitIosOptions {
+    } else if let value = value as? InitAndroidOptions {
       super.writeByte(129)
       super.writeValue(value.toList())
-    } else if let value = value as? InitOptions {
+    } else if let value = value as? InitIosOptions {
       super.writeByte(130)
       super.writeValue(value.toList())
-    } else if let value = value as? InitResult {
+    } else if let value = value as? InitOptions {
       super.writeByte(131)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqApp {
+    } else if let value = value as? InitResult {
       super.writeByte(132)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqDevice {
+    } else if let value = value as? PigeonIqApp {
       super.writeByte(133)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqMessageResult {
+    } else if let value = value as? PigeonIqDevice {
       super.writeByte(134)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqOpenApplicationResult {
+    } else if let value = value as? PigeonIqMessageResult {
       super.writeByte(135)
+      super.writeValue(value.toList())
+    } else if let value = value as? PigeonIqOpenApplicationResult {
+      super.writeByte(136)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -331,11 +362,12 @@ protocol ConnectIqHostApi {
   func initialize(initOptions: InitOptions, completion: @escaping (Result<InitResult, Error>) -> Void)
   func getKnownDevices(completion: @escaping (Result<[PigeonIqDevice], Error>) -> Void)
   func getConnectedDevices(completion: @escaping (Result<[PigeonIqDevice], Error>) -> Void)
-  func getApplicationInfo(deviceId: Int64, applicationId: String, completion: @escaping (Result<PigeonIqApp, Error>) -> Void)
-  func openApplication(deviceId: Int64, applicationId: String, completion: @escaping (Result<PigeonIqOpenApplicationResult, Error>) -> Void)
-  func openStore(storeId: String, completion: @escaping (Result<Bool, Error>) -> Void)
-  func sendMessage(deviceId: Int64, applicationId: String, message: [String: Any], completion: @escaping (Result<PigeonIqMessageResult, Error>) -> Void)
+  func getApplicationInfo(deviceId: String, applicationId: String, completion: @escaping (Result<PigeonIqApp, Error>) -> Void)
+  func openApplication(deviceId: String, applicationId: String, completion: @escaping (Result<PigeonIqOpenApplicationResult, Error>) -> Void)
+  func openStore(app: AppId, completion: @escaping (Result<Bool, Error>) -> Void)
+  func sendMessage(deviceId: String, applicationId: String, message: [String: Any], completion: @escaping (Result<PigeonIqMessageResult, Error>) -> Void)
   func openStoreForGcm(completion: @escaping (Result<Void, Error>) -> Void)
+  func iOsShowDeviceSelection(completion: @escaping (Result<Void, Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -395,7 +427,7 @@ class ConnectIqHostApiSetup {
     if let api = api {
       getApplicationInfoChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let deviceIdArg = args[0] is Int64 ? args[0] as! Int64 : Int64(args[0] as! Int32)
+        let deviceIdArg = args[0] as! String
         let applicationIdArg = args[1] as! String
         api.getApplicationInfo(deviceId: deviceIdArg, applicationId: applicationIdArg) { result in
           switch result {
@@ -413,7 +445,7 @@ class ConnectIqHostApiSetup {
     if let api = api {
       openApplicationChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let deviceIdArg = args[0] is Int64 ? args[0] as! Int64 : Int64(args[0] as! Int32)
+        let deviceIdArg = args[0] as! String
         let applicationIdArg = args[1] as! String
         api.openApplication(deviceId: deviceIdArg, applicationId: applicationIdArg) { result in
           switch result {
@@ -431,8 +463,8 @@ class ConnectIqHostApiSetup {
     if let api = api {
       openStoreChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let storeIdArg = args[0] as! String
-        api.openStore(storeId: storeIdArg) { result in
+        let appArg = args[0] as! AppId
+        api.openStore(app: appArg) { result in
           switch result {
             case .success(let res):
               reply(wrapResult(res))
@@ -448,7 +480,7 @@ class ConnectIqHostApiSetup {
     if let api = api {
       sendMessageChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let deviceIdArg = args[0] is Int64 ? args[0] as! Int64 : Int64(args[0] as! Int32)
+        let deviceIdArg = args[0] as! String
         let applicationIdArg = args[1] as! String
         let messageArg = args[2] as! [String: Any]
         api.sendMessage(deviceId: deviceIdArg, applicationId: applicationIdArg, message: messageArg) { result in
@@ -478,26 +510,43 @@ class ConnectIqHostApiSetup {
     } else {
       openStoreForGcmChannel.setMessageHandler(nil)
     }
+    let iOsShowDeviceSelectionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.iOsShowDeviceSelection", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      iOsShowDeviceSelectionChannel.setMessageHandler { _, reply in
+        api.iOsShowDeviceSelection() { result in
+          switch result {
+            case .success:
+              reply(wrapResult(nil))
+            case .failure(let error):
+              reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      iOsShowDeviceSelectionChannel.setMessageHandler(nil)
+    }
   }
 }
 private class FlutterConnectIqApiCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
       case 128:
-        return InitAndroidOptions.fromList(self.readValue() as! [Any?])
+        return AppId.fromList(self.readValue() as! [Any?])
       case 129:
-        return InitIosOptions.fromList(self.readValue() as! [Any?])
+        return InitAndroidOptions.fromList(self.readValue() as! [Any?])
       case 130:
-        return InitOptions.fromList(self.readValue() as! [Any?])
+        return InitIosOptions.fromList(self.readValue() as! [Any?])
       case 131:
-        return InitResult.fromList(self.readValue() as! [Any?])
+        return InitOptions.fromList(self.readValue() as! [Any?])
       case 132:
-        return PigeonIqApp.fromList(self.readValue() as! [Any?])
+        return InitResult.fromList(self.readValue() as! [Any?])
       case 133:
-        return PigeonIqDevice.fromList(self.readValue() as! [Any?])
+        return PigeonIqApp.fromList(self.readValue() as! [Any?])
       case 134:
-        return PigeonIqMessageResult.fromList(self.readValue() as! [Any?])
+        return PigeonIqDevice.fromList(self.readValue() as! [Any?])
       case 135:
+        return PigeonIqMessageResult.fromList(self.readValue() as! [Any?])
+      case 136:
         return PigeonIqOpenApplicationResult.fromList(self.readValue() as! [Any?])
       default:
         return super.readValue(ofType: type)
@@ -507,29 +556,32 @@ private class FlutterConnectIqApiCodecReader: FlutterStandardReader {
 
 private class FlutterConnectIqApiCodecWriter: FlutterStandardWriter {
   override func writeValue(_ value: Any) {
-    if let value = value as? InitAndroidOptions {
+    if let value = value as? AppId {
       super.writeByte(128)
       super.writeValue(value.toList())
-    } else if let value = value as? InitIosOptions {
+    } else if let value = value as? InitAndroidOptions {
       super.writeByte(129)
       super.writeValue(value.toList())
-    } else if let value = value as? InitOptions {
+    } else if let value = value as? InitIosOptions {
       super.writeByte(130)
       super.writeValue(value.toList())
-    } else if let value = value as? InitResult {
+    } else if let value = value as? InitOptions {
       super.writeByte(131)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqApp {
+    } else if let value = value as? InitResult {
       super.writeByte(132)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqDevice {
+    } else if let value = value as? PigeonIqApp {
       super.writeByte(133)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqMessageResult {
+    } else if let value = value as? PigeonIqDevice {
       super.writeByte(134)
       super.writeValue(value.toList())
-    } else if let value = value as? PigeonIqOpenApplicationResult {
+    } else if let value = value as? PigeonIqMessageResult {
       super.writeByte(135)
+      super.writeValue(value.toList())
+    } else if let value = value as? PigeonIqOpenApplicationResult {
+      super.writeByte(136)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)

@@ -27,7 +27,7 @@ class PigeonIqDevice {
     required this.status,
   });
 
-  int deviceIdentifier;
+  String deviceIdentifier;
   String friendlyName;
   PigeonIqDeviceStatus status;
 }
@@ -86,9 +86,10 @@ enum PigeonIqMessageStatus {
 }
 
 class PigeonIqMessageResult {
-  PigeonIqMessageResult({required this.status});
+  PigeonIqMessageResult({required this.status, this.failureDetails});
 
   PigeonIqMessageStatus status;
+  String? failureDetails;
 }
 
 class InitAndroidOptions {
@@ -104,17 +105,23 @@ class InitIosOptions {
   final String urlScheme;
 }
 
+class AppId {
+  const AppId({required this.applicationId, this.storeId});
+  final String applicationId;
+  final String? storeId;
+}
+
 class InitOptions {
-  InitOptions({
+  const InitOptions({
     required this.applicationIds,
     this.iosOptions = const InitIosOptions(),
     this.androidOptions =
         const InitAndroidOptions(connectType: ConnectType.wireless),
   });
 
-  List<String?> applicationIds;
-  InitIosOptions iosOptions;
-  InitAndroidOptions androidOptions;
+  final List<AppId?> applicationIds;
+  final InitIosOptions iosOptions;
+  final InitAndroidOptions androidOptions;
 }
 
 enum ConnectType {
@@ -149,28 +156,31 @@ abstract class ConnectIqHostApi {
 
   @async
   PigeonIqApp getApplicationInfo(
-    int deviceId,
+    String deviceId,
     String applicationId,
   );
 
   @async
   PigeonIqOpenApplicationResult openApplication(
-    int deviceId,
+    String deviceId,
     String applicationId,
   );
 
   @async
-  bool openStore(String storeId);
+  bool openStore(AppId app);
 
   @async
   PigeonIqMessageResult sendMessage(
-    int deviceId,
+    String deviceId,
     String applicationId,
     Map<String, Object> message,
   );
 
   @async
   void openStoreForGcm();
+
+  @async
+  void iOsShowDeviceSelection();
 }
 
 @FlutterApi()

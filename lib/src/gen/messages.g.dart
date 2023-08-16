@@ -60,7 +60,7 @@ class PigeonIqDevice {
     required this.status,
   });
 
-  int deviceIdentifier;
+  String deviceIdentifier;
 
   String friendlyName;
 
@@ -77,7 +77,7 @@ class PigeonIqDevice {
   static PigeonIqDevice decode(Object result) {
     result as List<Object?>;
     return PigeonIqDevice(
-      deviceIdentifier: result[0]! as int,
+      deviceIdentifier: result[0]! as String,
       friendlyName: result[1]! as String,
       status: PigeonIqDeviceStatus.values[result[2]! as int],
     );
@@ -144,13 +144,17 @@ class PigeonIqOpenApplicationResult {
 class PigeonIqMessageResult {
   PigeonIqMessageResult({
     required this.status,
+    this.failureDetails,
   });
 
   PigeonIqMessageStatus status;
 
+  String? failureDetails;
+
   Object encode() {
     return <Object?>[
       status.index,
+      failureDetails,
     ];
   }
 
@@ -158,6 +162,7 @@ class PigeonIqMessageResult {
     result as List<Object?>;
     return PigeonIqMessageResult(
       status: PigeonIqMessageStatus.values[result[0]! as int],
+      failureDetails: result[1] as String?,
     );
   }
 }
@@ -209,6 +214,32 @@ class InitIosOptions {
   }
 }
 
+class AppId {
+  AppId({
+    required this.applicationId,
+    this.storeId,
+  });
+
+  String applicationId;
+
+  String? storeId;
+
+  Object encode() {
+    return <Object?>[
+      applicationId,
+      storeId,
+    ];
+  }
+
+  static AppId decode(Object result) {
+    result as List<Object?>;
+    return AppId(
+      applicationId: result[0]! as String,
+      storeId: result[1] as String?,
+    );
+  }
+}
+
 class InitOptions {
   InitOptions({
     required this.applicationIds,
@@ -216,7 +247,7 @@ class InitOptions {
     required this.androidOptions,
   });
 
-  List<String?> applicationIds;
+  List<AppId?> applicationIds;
 
   InitIosOptions iosOptions;
 
@@ -233,7 +264,7 @@ class InitOptions {
   static InitOptions decode(Object result) {
     result as List<Object?>;
     return InitOptions(
-      applicationIds: (result[0] as List<Object?>?)!.cast<String?>(),
+      applicationIds: (result[0] as List<Object?>?)!.cast<AppId?>(),
       iosOptions: InitIosOptions.decode(result[1]! as List<Object?>),
       androidOptions: InitAndroidOptions.decode(result[2]! as List<Object?>),
     );
@@ -265,29 +296,32 @@ class _ConnectIqHostApiCodec extends StandardMessageCodec {
   const _ConnectIqHostApiCodec();
   @override
   void writeValue(WriteBuffer buffer, Object? value) {
-    if (value is InitAndroidOptions) {
+    if (value is AppId) {
       buffer.putUint8(128);
       writeValue(buffer, value.encode());
-    } else if (value is InitIosOptions) {
+    } else if (value is InitAndroidOptions) {
       buffer.putUint8(129);
       writeValue(buffer, value.encode());
-    } else if (value is InitOptions) {
+    } else if (value is InitIosOptions) {
       buffer.putUint8(130);
       writeValue(buffer, value.encode());
-    } else if (value is InitResult) {
+    } else if (value is InitOptions) {
       buffer.putUint8(131);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqApp) {
+    } else if (value is InitResult) {
       buffer.putUint8(132);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqDevice) {
+    } else if (value is PigeonIqApp) {
       buffer.putUint8(133);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqMessageResult) {
+    } else if (value is PigeonIqDevice) {
       buffer.putUint8(134);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqOpenApplicationResult) {
+    } else if (value is PigeonIqMessageResult) {
       buffer.putUint8(135);
+      writeValue(buffer, value.encode());
+    } else if (value is PigeonIqOpenApplicationResult) {
+      buffer.putUint8(136);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -298,20 +332,22 @@ class _ConnectIqHostApiCodec extends StandardMessageCodec {
   Object? readValueOfType(int type, ReadBuffer buffer) {
     switch (type) {
       case 128: 
-        return InitAndroidOptions.decode(readValue(buffer)!);
+        return AppId.decode(readValue(buffer)!);
       case 129: 
-        return InitIosOptions.decode(readValue(buffer)!);
+        return InitAndroidOptions.decode(readValue(buffer)!);
       case 130: 
-        return InitOptions.decode(readValue(buffer)!);
+        return InitIosOptions.decode(readValue(buffer)!);
       case 131: 
-        return InitResult.decode(readValue(buffer)!);
+        return InitOptions.decode(readValue(buffer)!);
       case 132: 
-        return PigeonIqApp.decode(readValue(buffer)!);
+        return InitResult.decode(readValue(buffer)!);
       case 133: 
-        return PigeonIqDevice.decode(readValue(buffer)!);
+        return PigeonIqApp.decode(readValue(buffer)!);
       case 134: 
-        return PigeonIqMessageResult.decode(readValue(buffer)!);
+        return PigeonIqDevice.decode(readValue(buffer)!);
       case 135: 
+        return PigeonIqMessageResult.decode(readValue(buffer)!);
+      case 136: 
         return PigeonIqOpenApplicationResult.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -410,7 +446,7 @@ class ConnectIqHostApi {
     }
   }
 
-  Future<PigeonIqApp> getApplicationInfo(int arg_deviceId, String arg_applicationId) async {
+  Future<PigeonIqApp> getApplicationInfo(String arg_deviceId, String arg_applicationId) async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.getApplicationInfo', codec,
         binaryMessenger: _binaryMessenger);
@@ -437,7 +473,7 @@ class ConnectIqHostApi {
     }
   }
 
-  Future<PigeonIqOpenApplicationResult> openApplication(int arg_deviceId, String arg_applicationId) async {
+  Future<PigeonIqOpenApplicationResult> openApplication(String arg_deviceId, String arg_applicationId) async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.openApplication', codec,
         binaryMessenger: _binaryMessenger);
@@ -464,12 +500,12 @@ class ConnectIqHostApi {
     }
   }
 
-  Future<bool> openStore(String arg_storeId) async {
+  Future<bool> openStore(AppId arg_app) async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.openStore', codec,
         binaryMessenger: _binaryMessenger);
     final List<Object?>? replyList =
-        await channel.send(<Object?>[arg_storeId]) as List<Object?>?;
+        await channel.send(<Object?>[arg_app]) as List<Object?>?;
     if (replyList == null) {
       throw PlatformException(
         code: 'channel-error',
@@ -491,7 +527,7 @@ class ConnectIqHostApi {
     }
   }
 
-  Future<PigeonIqMessageResult> sendMessage(int arg_deviceId, String arg_applicationId, Map<String?, Object?> arg_message) async {
+  Future<PigeonIqMessageResult> sendMessage(String arg_deviceId, String arg_applicationId, Map<String?, Object?> arg_message) async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.sendMessage', codec,
         binaryMessenger: _binaryMessenger);
@@ -539,35 +575,60 @@ class ConnectIqHostApi {
       return;
     }
   }
+
+  Future<void> iOsShowDeviceSelection() async {
+    final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.iOsShowDeviceSelection', codec,
+        binaryMessenger: _binaryMessenger);
+    final List<Object?>? replyList =
+        await channel.send(null) as List<Object?>?;
+    if (replyList == null) {
+      throw PlatformException(
+        code: 'channel-error',
+        message: 'Unable to establish connection on channel.',
+      );
+    } else if (replyList.length > 1) {
+      throw PlatformException(
+        code: replyList[0]! as String,
+        message: replyList[1] as String?,
+        details: replyList[2],
+      );
+    } else {
+      return;
+    }
+  }
 }
 
 class _FlutterConnectIqApiCodec extends StandardMessageCodec {
   const _FlutterConnectIqApiCodec();
   @override
   void writeValue(WriteBuffer buffer, Object? value) {
-    if (value is InitAndroidOptions) {
+    if (value is AppId) {
       buffer.putUint8(128);
       writeValue(buffer, value.encode());
-    } else if (value is InitIosOptions) {
+    } else if (value is InitAndroidOptions) {
       buffer.putUint8(129);
       writeValue(buffer, value.encode());
-    } else if (value is InitOptions) {
+    } else if (value is InitIosOptions) {
       buffer.putUint8(130);
       writeValue(buffer, value.encode());
-    } else if (value is InitResult) {
+    } else if (value is InitOptions) {
       buffer.putUint8(131);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqApp) {
+    } else if (value is InitResult) {
       buffer.putUint8(132);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqDevice) {
+    } else if (value is PigeonIqApp) {
       buffer.putUint8(133);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqMessageResult) {
+    } else if (value is PigeonIqDevice) {
       buffer.putUint8(134);
       writeValue(buffer, value.encode());
-    } else if (value is PigeonIqOpenApplicationResult) {
+    } else if (value is PigeonIqMessageResult) {
       buffer.putUint8(135);
+      writeValue(buffer, value.encode());
+    } else if (value is PigeonIqOpenApplicationResult) {
+      buffer.putUint8(136);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -578,20 +639,22 @@ class _FlutterConnectIqApiCodec extends StandardMessageCodec {
   Object? readValueOfType(int type, ReadBuffer buffer) {
     switch (type) {
       case 128: 
-        return InitAndroidOptions.decode(readValue(buffer)!);
+        return AppId.decode(readValue(buffer)!);
       case 129: 
-        return InitIosOptions.decode(readValue(buffer)!);
+        return InitAndroidOptions.decode(readValue(buffer)!);
       case 130: 
-        return InitOptions.decode(readValue(buffer)!);
+        return InitIosOptions.decode(readValue(buffer)!);
       case 131: 
-        return InitResult.decode(readValue(buffer)!);
+        return InitOptions.decode(readValue(buffer)!);
       case 132: 
-        return PigeonIqApp.decode(readValue(buffer)!);
+        return InitResult.decode(readValue(buffer)!);
       case 133: 
-        return PigeonIqDevice.decode(readValue(buffer)!);
+        return PigeonIqApp.decode(readValue(buffer)!);
       case 134: 
-        return PigeonIqMessageResult.decode(readValue(buffer)!);
+        return PigeonIqDevice.decode(readValue(buffer)!);
       case 135: 
+        return PigeonIqMessageResult.decode(readValue(buffer)!);
+      case 136: 
         return PigeonIqOpenApplicationResult.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
