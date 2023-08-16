@@ -3,9 +3,8 @@ import UIKit
 
 public class FlutterWatchGarminConnectIqPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "flutter_watch_garmin_connectiq", binaryMessenger: registrar.messenger())
-    let instance = FlutterWatchGarminConnectIqPlugin()
-    registrar.addMethodCallDelegate(instance, channel: channel)
+    let flutterConnectIqApi = FlutterConnectIqApi(binaryMessenger: registrar.messenger())
+    ConnectIqHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: ConnectIqHostApiImpl(flutterConnectIqApi: flutterConnectIqApi))
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
