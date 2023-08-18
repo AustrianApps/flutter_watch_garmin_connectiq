@@ -212,7 +212,7 @@ class ConnectIqHostApiImpl(
         val app = appCache[AppCacheKey(deviceId, MyUui(applicationId))]
             ?: if (initOptions.androidOptions.connectType == ConnectType.ADB) {
                 // for adb there can only be one app.. and it has no correct id.. so just use it..
-                appCache.values.first()
+                appCache.values.firstOrNull()
             } else {
                 null
             }
