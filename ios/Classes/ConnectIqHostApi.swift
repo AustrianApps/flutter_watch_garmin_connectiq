@@ -74,72 +74,6 @@ class ConnectIqHostApiImpl: NSObject {
   }
 }
 
-extension IQDeviceStatus {
-  func toPigeon() -> PigeonIqDeviceStatus {
-    switch self {
-    case .connected: return .connected
-    case .bluetoothNotReady: return .unknown
-    case .invalidDevice: return .unknown
-    case .notFound: return .notPaired
-    case .notConnected: return .notConnected
-    @unknown default:
-      logger.error("Invalid IQDeviceStatus? \(String(reflecting: self))")
-      return .notConnected
-    }
-  }
-}
-
-extension IQDevice {
-  func toPigeon(status: PigeonIqDeviceStatus) -> PigeonIqDevice {
-    return PigeonIqDevice(deviceIdentifier: uuid.uuidString, friendlyName: friendlyName, status: status)
-  }
-}
-
-extension IQSendMessageResult {
-  func toPigeon() -> PigeonIqMessageStatus {
-    switch self {
-    case .success: return .success
-    case .failure_AppAlreadyRunning: return .failureUnknown
-    case .failure_AppNotFound: return .failureUnknown
-    case .failure_Timeout: return .failureDuringTransfer
-    case .failure_MaxRetries: return .failureDuringTransfer
-    case .failure_Unknown: return .failureUnknown
-    case .failure_InternalError:
-      return .failureUnknown
-    case .failure_DeviceNotAvailable:
-      return .failureDeviceNotConnected
-    case .failure_DeviceIsBusy:
-      return .failureDeviceNotConnected
-    case .failure_UnsupportedType:
-      return .failureInvalidFormat
-    case .failure_InsufficientMemory:
-      return .failureUnknown
-    case .failure_PromptNotDisplayed:
-      return .failureUnknown
-    @unknown default:
-      return .failureUnknown
-    }
-  }
-  
-  func toOpenApplicationStatus() -> PigeonIqOpenApplicationStatus {
-    switch self {
-    case .success: return .promptShownOnDevice
-    case .failure_Unknown: fallthrough
-    case .failure_InternalError: fallthrough
-    case .failure_DeviceNotAvailable: fallthrough
-    case .failure_AppNotFound: fallthrough
-    case .failure_DeviceIsBusy: fallthrough
-    case .failure_UnsupportedType: fallthrough
-    case .failure_InsufficientMemory: fallthrough
-    case .failure_Timeout: fallthrough
-    case .failure_MaxRetries: return .unknownFailure
-    case .failure_PromptNotDisplayed: return .promptNotShownOnDevice
-    case .failure_AppAlreadyRunning: return .appIsAlreadyRunning
-    @unknown default:
-      return .unknownFailure
-    }
-  }
-}
 
 extension ConnectIqHostApiImpl: ConnectIqHostApi {
   func initialize(initOptions: InitOptions, completion: @escaping (Result<InitResult, Error>) -> Void) {
@@ -197,7 +131,7 @@ extension ConnectIqHostApiImpl: ConnectIqHostApi {
           completion(.failure(FlutterError(code: "ErrorLoadingAppDetails", message: "unknown error", details: nil)))
           return
         }
-        let pigeonApp = PigeonIqApp(applicationId: applicationId, status: .installed, displayName: "", version: Int64(status.version))
+        let pigeonApp = PigeonIqApp(applicationId: applicationId, status: status.toPigeon(), displayName: "", version: Int64(status.version))
         completion(.success(pigeonApp))
       }
     }
@@ -259,11 +193,5 @@ extension ConnectIqHostApiImpl: IQAppMessageDelegate {
     flutterConnectIqApi.onMessageReceived(device: app.device.toPigeon(status: .connected), app: app.toPigeon(), message: message) {
       
     }
-  }
-}
-
-extension IQApp {
-  func toPigeon() -> PigeonIqApp {
-    return PigeonIqApp(applicationId: uuid.uuidString, status: .installed, displayName: "", version: Int64(0))
   }
 }
