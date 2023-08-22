@@ -249,7 +249,7 @@ class ConnectIqHostApiImpl(
         }
     }
 
-    override fun openStore(app: AppId, callback: (Result<Boolean>) -> Unit) {
+    override fun openStore(deviceId: String, app: AppId, callback: (Result<Boolean>) -> Unit) {
         app.storeId?.let { storeId ->
             val result = connectIQ.openStore(storeId)
             callback(Result.success(result))

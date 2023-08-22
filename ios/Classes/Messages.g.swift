@@ -364,7 +364,8 @@ protocol ConnectIqHostApi {
   func getConnectedDevices(completion: @escaping (Result<[PigeonIqDevice], Error>) -> Void)
   func getApplicationInfo(deviceId: String, applicationId: String, completion: @escaping (Result<PigeonIqApp, Error>) -> Void)
   func openApplication(deviceId: String, applicationId: String, completion: @escaping (Result<PigeonIqOpenApplicationResult, Error>) -> Void)
-  func openStore(app: AppId, completion: @escaping (Result<Bool, Error>) -> Void)
+  /// [deviceId] is only used on iOS.
+  func openStore(deviceId: String, app: AppId, completion: @escaping (Result<Bool, Error>) -> Void)
   func sendMessage(deviceId: String, applicationId: String, message: [String: Any], completion: @escaping (Result<PigeonIqMessageResult, Error>) -> Void)
   func openStoreForGcm(completion: @escaping (Result<Void, Error>) -> Void)
   func iOsShowDeviceSelection(completion: @escaping (Result<Void, Error>) -> Void)
@@ -459,12 +460,14 @@ class ConnectIqHostApiSetup {
     } else {
       openApplicationChannel.setMessageHandler(nil)
     }
+    /// [deviceId] is only used on iOS.
     let openStoreChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.openStore", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       openStoreChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let appArg = args[0] as! AppId
-        api.openStore(app: appArg) { result in
+        let deviceIdArg = args[0] as! String
+        let appArg = args[1] as! AppId
+        api.openStore(deviceId: deviceIdArg, app: appArg) { result in
           switch result {
             case .success(let res):
               reply(wrapResult(res))

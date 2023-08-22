@@ -427,7 +427,8 @@ interface ConnectIqHostApi {
   fun getConnectedDevices(callback: (Result<List<PigeonIqDevice>>) -> Unit)
   fun getApplicationInfo(deviceId: String, applicationId: String, callback: (Result<PigeonIqApp>) -> Unit)
   fun openApplication(deviceId: String, applicationId: String, callback: (Result<PigeonIqOpenApplicationResult>) -> Unit)
-  fun openStore(app: AppId, callback: (Result<Boolean>) -> Unit)
+  /** [deviceId] is only used on iOS. */
+  fun openStore(deviceId: String, app: AppId, callback: (Result<Boolean>) -> Unit)
   fun sendMessage(deviceId: String, applicationId: String, message: Map<String, Any>, callback: (Result<PigeonIqMessageResult>) -> Unit)
   fun openStoreForGcm(callback: (Result<Unit>) -> Unit)
   fun iOsShowDeviceSelection(callback: (Result<Unit>) -> Unit)
@@ -543,8 +544,9 @@ interface ConnectIqHostApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val appArg = args[0] as AppId
-            api.openStore(appArg) { result: Result<Boolean> ->
+            val deviceIdArg = args[0] as String
+            val appArg = args[1] as AppId
+            api.openStore(deviceIdArg, appArg) { result: Result<Boolean> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(wrapError(error))

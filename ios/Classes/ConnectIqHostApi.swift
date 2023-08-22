@@ -146,9 +146,13 @@ extension ConnectIqHostApiImpl: ConnectIqHostApi {
     }
   }
   
-  func openStore(app: AppId, completion: @escaping (Result<Bool, Error>) -> Void) {
-    connectIQ.showStore(for: app.toIQApp(device: nil))
-    completion(.success(true))
+  func openStore(deviceId: String, app: AppId, completion: @escaping (Result<Bool, Error>) -> Void) {
+    withDevice(deviceId: deviceId, completion: completion) { device in
+      let iqApp = app.toIQApp(device: device)
+      logger.debug("open Store for \(String (reflecting:iqApp))  (storeId: \(String(reflecting: iqApp?.storeUuid))")
+      self.connectIQ.showStore(for: iqApp)
+      completion(.success(true))
+    }
   }
   
   func sendMessage(deviceId: String, applicationId: String, message: [String: Any], completion: @escaping (Result<PigeonIqMessageResult, Error>) -> Void) {

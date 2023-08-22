@@ -166,8 +166,9 @@ abstract class ConnectIqHostApi {
     String applicationId,
   );
 
+  /// [deviceId] is only used on iOS.
   @async
-  bool openStore(AppId app);
+  bool openStore(String deviceId, AppId app);
 
   @async
   PigeonIqMessageResult sendMessage(

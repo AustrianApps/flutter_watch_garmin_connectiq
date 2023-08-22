@@ -500,12 +500,13 @@ class ConnectIqHostApi {
     }
   }
 
-  Future<bool> openStore(AppId arg_app) async {
+  /// [deviceId] is only used on iOS.
+  Future<bool> openStore(String arg_deviceId, AppId arg_app) async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.flutter_watch_garmin_connectiq.ConnectIqHostApi.openStore', codec,
         binaryMessenger: _binaryMessenger);
     final List<Object?>? replyList =
-        await channel.send(<Object?>[arg_app]) as List<Object?>?;
+        await channel.send(<Object?>[arg_deviceId, arg_app]) as List<Object?>?;
     if (replyList == null) {
       throw PlatformException(
         code: 'channel-error',
