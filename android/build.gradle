@@ -44,6 +44,7 @@ android {
 
     defaultConfig {
         minSdkVersion 16
+        consumerProguardFiles "proguard_garmin_ciq.pro"
     }
 
     dependencies {
