@@ -188,13 +188,14 @@ class ConnectIqHostApiImpl(
         applicationId: String,
         callback: (Result<PigeonIqApp>) -> Unit
     ) {
+        val cb = CallbackWrapper(callback) { "getApplicationInfo($deviceId, $applicationId)" }
         scopeIo.launch {
-            withDevice(deviceId, callback) { device ->
+            withDevice(deviceId, cb) { device ->
                 updateApplicationInfoAndRegisterForEvents(device, applicationId) { appResult ->
                     appResult.fold({ app ->
-                        callback(Result.success(app.toPigeonApp()))
+                        cb(Result.success(app.toPigeonApp()))
                     }, { failure ->
-                        callback(Result.failure(failure))
+                        cb(Result.failure(failure))
                     })
 
                 }
@@ -376,7 +377,7 @@ fun IQApp.toPigeonApp() = PigeonIqApp(
         IQApp.IQAppStatus.NOT_INSTALLED -> PigeonIqAppStatus.NOTINSTALLED
         IQApp.IQAppStatus.NOT_SUPPORTED -> PigeonIqAppStatus.NOTSUPPORTED
     },
-    displayName = displayName,
+    displayName = displayName ?: "",
     version = version().toLong(),
 )
 
@@ -388,3 +389,17 @@ fun IQDeviceStatus?.toPigeonDeviceStatus() = when (this) {
 }
 
 fun IQApp.toDebugString() = "IQApp($applicationId, $displayName, $status)"
+
+class CallbackWrapper<T>(private var callback: ((Result<T>) -> Unit)?, private val debug: () -> String) :
+        (Result<T>) -> Unit {
+    override fun invoke(result: Result<T>) {
+        val cb = callback
+        if (cb != null) {
+            cb(result)
+            callback = null
+        } else {
+            logd { "WARNING: tried to call callback twice. ${debug()}" }
+        }
+    }
+
+}
